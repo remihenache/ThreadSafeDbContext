@@ -21,4 +21,4 @@ public class MyDbContext : ThreadSafeDbContext
 
 Feel free to explore and leverage these extensions.
 
-### Note: This code snippet is a standalone C# implementation and can be integrated into your project to extend the LINQ
+### Note: This code snippet is a standalone C# implementation and can be integrated into your project to extend the DbContext
