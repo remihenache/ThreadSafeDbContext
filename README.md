@@ -18,6 +18,8 @@ public class MyDbContext : ThreadSafeDbContext
 }
 ``` 
 
+# More about
+You can find more details about the implementation here: [A Threadsafe implementation of DbContext](https://medium.com/@rhenache/a-threadsafe-implementation-of-dbcontext-bbd9959cdc30)
 
 Feel free to explore and leverage these extensions.
 
