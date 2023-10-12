@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Query;
 
-namespace ThreadSafeDbContext.QueryProviders;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
 internal sealed class ThreadSafeQueryProvider : IAsyncQueryProvider
 {

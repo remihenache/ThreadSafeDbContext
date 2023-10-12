@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
-using ThreadSafeDbContext.QueryProviders;
+using Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
-namespace ThreadSafeDbContext;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe;
 
 internal sealed class ThreadSafeDbSet<TEntity> :
     DbSet<TEntity>,

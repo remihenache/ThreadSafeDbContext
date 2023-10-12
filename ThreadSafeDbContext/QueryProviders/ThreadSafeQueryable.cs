@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Linq.Expressions;
 
-namespace ThreadSafeDbContext.QueryProviders;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
 internal class ThreadSafeQueryable : IQueryable
 {

@@ -1,4 +1,4 @@
-namespace ThreadSafeDbContext.Tests.TestableImplementations;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations;
 
 public class TestableEntity
 {

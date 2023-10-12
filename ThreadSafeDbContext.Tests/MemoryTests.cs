@@ -1,8 +1,7 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using ThreadSafeDbContext.Tests.TestableImplementations;
+using Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations;
 
-namespace ThreadSafeDbContext.Tests;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests;
 
 [TestCaseOrderer("ThreadSafeDbContext.Tests.AlphabeticalOrderer", "ThreadSafeDbContext.Tests")]
 public class MemoryTests
@@ -88,7 +87,7 @@ public class MemoryTests
 
     private static TestableDbContext CreateFromConnection(String connection)
     {
-        return new TestableDbContext(new DbContextOptionsBuilder<ThreadSafeDbContext>()
+        return new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
             .UseInMemoryDatabase(connection));
     }
 }

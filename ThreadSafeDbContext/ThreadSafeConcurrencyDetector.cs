@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace ThreadSafeDbContext;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe;
 
 internal class ThreadSafeConcurrencyDetector : IConcurrencyDetector
 {

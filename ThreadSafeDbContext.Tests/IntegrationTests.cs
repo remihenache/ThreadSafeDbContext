@@ -1,8 +1,7 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using ThreadSafeDbContext.Tests.TestableImplementations;
+using Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations;
 
-namespace ThreadSafeDbContext.Tests;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests;
 
 [TestCaseOrderer("ThreadSafeDbContext.Tests.AlphabeticalOrderer", "ThreadSafeDbContext.Tests")]
 [Collection("Sequential")]
@@ -50,6 +49,23 @@ public class IntegrationTests : IDisposable
         entities.Should().HaveCount(nbTasks);
     }
 
+    [Theory]
+    [InlineData(10)]
+    [InlineData(20)]
+    [InlineData(50)]
+    public async Task ShouldUpdateAnEntityFromMultipleThreads(Int32 nbTasks)
+    {
+        this.testableDbContext.Set<TestableEntity>().Add(new TestableEntity
+        {
+            ID = 1
+        });
+        await this.testableDbContext.SaveChangesAsync();
+        Task[] tasks = UpdateTasks(nbTasks, this.testableDbContext).ToArray();
+        tasks.Length.Should().Be(nbTasks);
+        await Task.WhenAll(tasks);
+        Int32 count = this.testableDbContext.Set<TestableEntity>().Count();
+        count.Should().Be(1);
+    }
 
     [Theory]
     [InlineData(10)]
@@ -72,6 +88,7 @@ public class IntegrationTests : IDisposable
         {
             result.Add(ReadOneEntity(threadSafeDbContext));
             result.Add(ReadAllEntities(threadSafeDbContext));
+            result.Add(FindOneEntity(threadSafeDbContext));
         }
 
         return result;
@@ -81,6 +98,12 @@ public class IntegrationTests : IDisposable
     {
         return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().FirstAsync());
     }
+
+    private static Task FindOneEntity(DbContext threadSafeDbContext)
+    {
+        return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().FindAsync(1));
+    }
+
 
     private static Task ReadAllEntities(DbContext threadSafeDbContext)
     {
@@ -99,7 +122,7 @@ public class IntegrationTests : IDisposable
     {
         return Task.Run(async () =>
         {
-            dbContext.Set<TestableEntity>().Add(new TestableEntity
+            await dbContext.Set<TestableEntity>().AddAsync(new TestableEntity
             {
                 ID = key
             });
@@ -107,9 +130,27 @@ public class IntegrationTests : IDisposable
         });
     }
 
+    private static IEnumerable<Task> UpdateTasks(Int32 numberOfOccurrences, DbContext threadSafeDbContext)
+    {
+        List<Task> result = new();
+        for (Int32 index = 0; index < numberOfOccurrences; index++)
+            result.Add(UpdateEntity(index + numberOfOccurrences, threadSafeDbContext));
+        return result;
+    }
+
+    private static Task UpdateEntity(Int32 key, DbContext dbContext)
+    {
+        return Task.Run(async () =>
+        {
+            TestableEntity? testableEntity = dbContext.Find<TestableEntity>(1);
+            dbContext.Set<TestableEntity>().Update(testableEntity!);
+            await dbContext.SaveChangesAsync();
+        });
+    }
+
     private static TestableDbContext CreateFromConnection()
     {
-        return new TestableDbContext(new DbContextOptionsBuilder<ThreadSafeDbContext>()
+        return new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
             .UseSqlServer(
                 "Server=localhost,1436;Database=ThreadSafeDbContext;TrustServerCertificate=true;MultipleActiveResultSets=true;User ID=sa;Password=P@ssword11!!;", //MyP@ssw0rd!
                 options => options.EnableRetryOnFailure()

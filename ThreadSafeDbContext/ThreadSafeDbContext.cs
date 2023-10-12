@@ -1,7 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace ThreadSafeDbContext;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe;
 
 public class ThreadSafeDbContext : DbContext
 {
@@ -11,7 +10,7 @@ public class ThreadSafeDbContext : DbContext
     {
     }
 
-    public ThreadSafeDbContext(DbContextOptionsBuilder<ThreadSafeDbContext> optionsBuilder)
+    public ThreadSafeDbContext(DbContextOptionsBuilder optionsBuilder)
         : base(optionsBuilder
             .ReplaceService<IConcurrencyDetector, ThreadSafeConcurrencyDetector>()
             .Options)
@@ -33,7 +32,7 @@ public class ThreadSafeDbContext : DbContext
         }
         finally
         {
-            if(this.semaphoreSlim.CurrentCount == 0)
+            if (this.semaphoreSlim.CurrentCount == 0)
                 this.semaphoreSlim.Release();
         }
     }
@@ -48,7 +47,7 @@ public class ThreadSafeDbContext : DbContext
         }
         finally
         {
-            if(this.semaphoreSlim.CurrentCount == 0)
+            if (this.semaphoreSlim.CurrentCount == 0)
                 this.semaphoreSlim.Release();
         }
     }
@@ -62,7 +61,7 @@ public class ThreadSafeDbContext : DbContext
         }
         finally
         {
-            if(this.semaphoreSlim.CurrentCount == 0)
+            if (this.semaphoreSlim.CurrentCount == 0)
                 this.semaphoreSlim.Release();
         }
     }

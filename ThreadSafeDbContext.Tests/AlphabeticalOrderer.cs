@@ -1,7 +1,7 @@
 ﻿using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace ThreadSafeDbContext.Tests;
+namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests;
 
 public class AlphabeticalOrderer : ITestCaseOrderer
 {
