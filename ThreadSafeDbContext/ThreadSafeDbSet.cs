@@ -182,17 +182,17 @@ internal sealed class ThreadSafeDbSet<TEntity> :
 
     public override IQueryable<TEntity> AsQueryable()
     {
-        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
+        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
     }
 
     public override IAsyncEnumerable<TEntity> AsAsyncEnumerable()
     {
-        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
+        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
     }
 
     public override IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
-        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetAsyncEnumerator(
+        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetAsyncEnumerator(
             cancellationToken);
     }
 
@@ -202,11 +202,11 @@ internal sealed class ThreadSafeDbSet<TEntity> :
     }
 
     public IQueryProvider Provider =>
-        new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).Provider;
+        new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).Provider;
 
     public IEnumerator<TEntity> GetEnumerator()
     {
-        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetEnumerator();
+        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetEnumerator();
     }
 
     #endregion

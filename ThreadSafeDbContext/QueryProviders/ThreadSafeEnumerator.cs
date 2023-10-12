@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
-public class ThreadSafeEnumerator : IEnumerator
+internal class ThreadSafeEnumerator : IEnumerator
 {
     protected readonly IEnumerator Enumerator;
     protected readonly SemaphoreSlim SemaphoreSlim;
@@ -42,7 +42,7 @@ public class ThreadSafeEnumerator : IEnumerator
     public Object Current => this.Enumerator.Current!;
 }
 
-public class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerator<T>, IAsyncEnumerator<T>
+internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerator<T>, IAsyncEnumerator<T>
 {
     public ThreadSafeEnumerator(IEnumerator<T> enumerator, SemaphoreSlim semaphoreSlim)
         : base(enumerator, semaphoreSlim)

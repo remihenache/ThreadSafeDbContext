@@ -76,7 +76,7 @@ public class IntegrationTests : IDisposable
         this.testableDbContext.Set<TestableEntity>().AddRange(
             new TestableEntity {ID = 1, Name = "Test"},
             new TestableEntity {ID = 2, Name = "Test2"}
-            );
+        );
         await this.testableDbContext.SaveChangesAsync();
 
         IEnumerable<Task> tasks = CreateReadTasks(nbTasks, this.testableDbContext);
@@ -92,6 +92,7 @@ public class IntegrationTests : IDisposable
             result.Add(ReadOneEntity(threadSafeDbContext));
             result.Add(ReadAllEntities(threadSafeDbContext));
             result.Add(FindOneEntity(threadSafeDbContext));
+            result.Add(ReadWithFiltersAsync(threadSafeDbContext));
             result.Add(ReadWithFilters(threadSafeDbContext));
         }
 
@@ -103,9 +104,14 @@ public class IntegrationTests : IDisposable
         return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().FirstAsync());
     }
 
-    private static Task ReadWithFilters(DbContext threadSafeDbContext)
+    private static Task ReadWithFiltersAsync(DbContext threadSafeDbContext)
     {
         return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().Where(t => t.Name == "Test2").SingleAsync());
+    }
+
+    private static Task ReadWithFilters(DbContext threadSafeDbContext)
+    {
+        return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().Where(t => t.Name == "Test2").Single());
     }
 
 
