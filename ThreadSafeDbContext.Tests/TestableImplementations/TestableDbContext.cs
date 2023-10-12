@@ -10,6 +10,7 @@ public class TestableDbContext : ThreadSafeDbContext
     {
         modelBuilder.Entity<TestableEntity>().ToTable("TestableEntity");
         modelBuilder.Entity<TestableEntity>().HasKey(t => t.ID);
+        modelBuilder.Entity<TestableEntity>().Property(t => t.Name);
         base.OnModelCreating(modelBuilder);
     }
 }

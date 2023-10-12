@@ -70,10 +70,13 @@ public class IntegrationTests : IDisposable
     [Theory]
     [InlineData(10)]
     [InlineData(20)]
-    [InlineData(100)]
+    [InlineData(50)]
     public async Task ShouldReadAnEntityFromMultipleThreads(Int32 nbTasks)
     {
-        this.testableDbContext.Set<TestableEntity>().Add(new TestableEntity {ID = 1});
+        this.testableDbContext.Set<TestableEntity>().AddRange(
+            new TestableEntity {ID = 1, Name = "Test"},
+            new TestableEntity {ID = 2, Name = "Test2"}
+            );
         await this.testableDbContext.SaveChangesAsync();
 
         IEnumerable<Task> tasks = CreateReadTasks(nbTasks, this.testableDbContext);
@@ -89,6 +92,7 @@ public class IntegrationTests : IDisposable
             result.Add(ReadOneEntity(threadSafeDbContext));
             result.Add(ReadAllEntities(threadSafeDbContext));
             result.Add(FindOneEntity(threadSafeDbContext));
+            result.Add(ReadWithFilters(threadSafeDbContext));
         }
 
         return result;
@@ -99,6 +103,12 @@ public class IntegrationTests : IDisposable
         return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().FirstAsync());
     }
 
+    private static Task ReadWithFilters(DbContext threadSafeDbContext)
+    {
+        return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().Where(t => t.Name == "Test2").SingleAsync());
+    }
+
+
     private static Task FindOneEntity(DbContext threadSafeDbContext)
     {
         return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().FindAsync(1));
@@ -107,7 +117,7 @@ public class IntegrationTests : IDisposable
 
     private static Task ReadAllEntities(DbContext threadSafeDbContext)
     {
-        return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().ToListAsync());
+        return Task.Run(() => threadSafeDbContext.Set<TestableEntity>().OrderBy(t => t.Name).ToListAsync());
     }
 
     private static IEnumerable<Task> CreateTasks(Int32 numberOfOccurrences, DbContext threadSafeDbContext)

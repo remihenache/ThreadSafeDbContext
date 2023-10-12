@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Infrastructure;
-
-namespace Microsoft.EntityFrameworkCore.ThreadSafe;
+﻿namespace Microsoft.EntityFrameworkCore.ThreadSafe;
 
 public class ThreadSafeDbContext : DbContext
 {
@@ -12,57 +10,54 @@ public class ThreadSafeDbContext : DbContext
 
     public ThreadSafeDbContext(DbContextOptionsBuilder optionsBuilder)
         : base(optionsBuilder
-            .ReplaceService<IConcurrencyDetector, ThreadSafeConcurrencyDetector>()
+            .EnableThreadSafetyChecks(false)
             .Options)
     {
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.ReplaceService<IConcurrencyDetector, ThreadSafeConcurrencyDetector>();
+        optionsBuilder.EnableThreadSafetyChecks(false);
         base.OnConfiguring(optionsBuilder);
     }
 
     public override DbSet<TEntity> Set<TEntity>()
     {
+        this.semaphoreSlim.Wait();
         try
         {
-            this.semaphoreSlim.Wait();
             return new ThreadSafeDbSet<TEntity>(base.Set<TEntity>(), this.semaphoreSlim);
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 
 
     public override async Task<Int32> SaveChangesAsync(CancellationToken cancellationToken = new())
     {
+        await this.semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
-            await this.semaphoreSlim.WaitAsync(cancellationToken);
             return await base.SaveChangesAsync(cancellationToken);
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 
     public override Int32 SaveChanges()
     {
+        this.semaphoreSlim.Wait();
         try
         {
-            this.semaphoreSlim.Wait();
             return base.SaveChanges();
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 }

@@ -5,39 +5,39 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
 internal sealed class ThreadSafeQueryProvider : IAsyncQueryProvider
 {
-    private readonly IQueryProvider _queryProvider;
-    private readonly SemaphoreSlim _semaphoreSlim;
+    private readonly IQueryProvider queryProvider;
+    private readonly SemaphoreSlim semaphoreSlim;
 
     public ThreadSafeQueryProvider(
         IQueryProvider queryProvider,
         SemaphoreSlim semaphoreSlim)
     {
-        this._queryProvider = queryProvider;
-        this._semaphoreSlim = semaphoreSlim;
+        this.queryProvider = queryProvider;
+        this.semaphoreSlim = semaphoreSlim;
     }
 
     public IQueryable CreateQuery(Expression expression)
     {
-        return new ThreadSafeQueryable(this._queryProvider.CreateQuery(expression), this._semaphoreSlim);
+        return new ThreadSafeQueryable(this.queryProvider.CreateQuery(expression), this.semaphoreSlim);
     }
 
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {
-        return new ThreadSafeQueryable<TElement>(this._queryProvider.CreateQuery<TElement>(expression),
-            this._semaphoreSlim);
+        return new ThreadSafeQueryable<TElement>(this.queryProvider.CreateQuery<TElement>(expression),
+            this.semaphoreSlim);
     }
 
     public Object? Execute(Expression expression)
     {
         try
         {
-            this._semaphoreSlim.Wait();
-            return this._queryProvider.Execute(expression);
+            this.semaphoreSlim.Wait();
+            return this.queryProvider.Execute(expression);
         }
         finally
         {
-            if (this._semaphoreSlim.CurrentCount == 0)
-                this._semaphoreSlim.Release();
+            if (this.semaphoreSlim.CurrentCount == 0)
+                this.semaphoreSlim.Release();
         }
     }
 
@@ -45,13 +45,13 @@ internal sealed class ThreadSafeQueryProvider : IAsyncQueryProvider
     {
         try
         {
-            this._semaphoreSlim.Wait();
-            return this._queryProvider.Execute<TResult>(expression);
+            this.semaphoreSlim.Wait();
+            return this.queryProvider.Execute<TResult>(expression);
         }
         finally
         {
-            if (this._semaphoreSlim.CurrentCount == 0)
-                this._semaphoreSlim.Release();
+            if (this.semaphoreSlim.CurrentCount == 0)
+                this.semaphoreSlim.Release();
         }
     }
 
@@ -59,13 +59,13 @@ internal sealed class ThreadSafeQueryProvider : IAsyncQueryProvider
     {
         try
         {
-            this._semaphoreSlim.Wait();
-            return (this._queryProvider as IAsyncQueryProvider)!.ExecuteAsync<TResult>(expression, cancellationToken);
+            this.semaphoreSlim.Wait();
+            return (this.queryProvider as IAsyncQueryProvider)!.ExecuteAsync<TResult>(expression, cancellationToken);
         }
         finally
         {
-            if (this._semaphoreSlim.CurrentCount == 0)
-                this._semaphoreSlim.Release();
+            if (this.semaphoreSlim.CurrentCount == 0)
+                this.semaphoreSlim.Release();
         }
     }
 }

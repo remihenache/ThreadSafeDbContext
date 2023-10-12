@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
-internal class ThreadSafeQueryable : IQueryable
+internal class ThreadSafeQueryable : IOrderedQueryable
 {
     protected readonly SemaphoreSlim SemaphoreSlim;
     protected readonly IQueryable Set;
@@ -17,15 +17,7 @@ internal class ThreadSafeQueryable : IQueryable
 
     public IEnumerator GetEnumerator()
     {
-        try
-        {
-            this.SemaphoreSlim.Wait();
-            return this.Set.GetEnumerator();
-        }
-        finally
-        {
-            if (this.SemaphoreSlim.CurrentCount == 0) this.SemaphoreSlim.Release();
-        }
+        return new ThreadSafeEnumerator(this.Set.GetEnumerator(), this.SemaphoreSlim);
     }
 
     public Type ElementType => this.Set.ElementType;
@@ -35,7 +27,7 @@ internal class ThreadSafeQueryable : IQueryable
     public IQueryProvider Provider => new ThreadSafeQueryProvider(this.Set.Provider, this.SemaphoreSlim);
 }
 
-internal sealed class ThreadSafeQueryable<T> : ThreadSafeQueryable, IQueryable<T>, IAsyncEnumerable<T>
+internal sealed class ThreadSafeQueryable<T> : ThreadSafeQueryable, IAsyncEnumerable<T>, IOrderedQueryable<T>
 {
     public ThreadSafeQueryable(IQueryable<T> set, SemaphoreSlim semaphoreSlim)
         : base(set, semaphoreSlim)
@@ -44,29 +36,11 @@ internal sealed class ThreadSafeQueryable<T> : ThreadSafeQueryable, IQueryable<T
 
     public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
-        try
-        {
-            this.SemaphoreSlim.Wait(cancellationToken);
-            return (this.Set as IAsyncEnumerable<T>)!.GetAsyncEnumerator(cancellationToken);
-        }
-        finally
-        {
-            if (this.SemaphoreSlim.CurrentCount == 0)
-                this.SemaphoreSlim.Release();
-        }
+        return new ThreadSafeEnumerator<T>((this.Set as IQueryable<T>)!.GetEnumerator(), this.SemaphoreSlim);
     }
 
     public new IEnumerator<T> GetEnumerator()
     {
-        try
-        {
-            this.SemaphoreSlim.Wait();
-            return (this.Set as IQueryable<T>)!.GetEnumerator();
-        }
-        finally
-        {
-            if (this.SemaphoreSlim.CurrentCount == 0)
-                this.SemaphoreSlim.Release();
-        }
+        return new ThreadSafeEnumerator<T>((this.Set as IQueryable<T>)!.GetEnumerator(), this.SemaphoreSlim);
     }
 }

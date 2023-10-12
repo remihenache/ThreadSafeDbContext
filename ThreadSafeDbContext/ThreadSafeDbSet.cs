@@ -124,58 +124,54 @@ internal sealed class ThreadSafeDbSet<TEntity> :
 
     private void SafeExecute(Action func)
     {
+        this.semaphoreSlim.Wait();
         try
         {
-            this.semaphoreSlim.Wait();
             func();
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 
     private T SafeExecute<T>(Func<T> func)
     {
+        this.semaphoreSlim.Wait();
         try
         {
-            this.semaphoreSlim.Wait();
             return func();
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 
     private async ValueTask<T> SafeExecuteValueAsync<T>(Func<ValueTask<T>> func,
         CancellationToken cancellationToken = default)
     {
+        await this.semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
-            await this.semaphoreSlim.WaitAsync(cancellationToken);
             return await func();
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 
     private async Task SafeExecuteAsync(Func<Task> func, CancellationToken cancellationToken = default)
     {
+        await this.semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
-            await this.semaphoreSlim.WaitAsync(cancellationToken);
             await func();
         }
         finally
         {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
+            this.semaphoreSlim.Release();
         }
     }
 
@@ -196,7 +192,8 @@ internal sealed class ThreadSafeDbSet<TEntity> :
 
     public override IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
-        return SafeExecute(() => (this.set as IAsyncEnumerable<TEntity>)!.GetAsyncEnumerator(cancellationToken));
+        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetAsyncEnumerator(
+            cancellationToken);
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -205,11 +202,11 @@ internal sealed class ThreadSafeDbSet<TEntity> :
     }
 
     public IQueryProvider Provider =>
-        new ThreadSafeQueryProvider((this.set as IQueryable).Provider, this.semaphoreSlim);
+        new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).Provider;
 
     public IEnumerator<TEntity> GetEnumerator()
     {
-        return SafeExecute(() => (this.set as IEnumerable<TEntity>)!.GetEnumerator());
+        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetEnumerator();
     }
 
     #endregion
