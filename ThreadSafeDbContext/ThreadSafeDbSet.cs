@@ -1,15 +1,14 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Collections;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using ThreadSafeDbContext.QueryProviders;
 
 namespace ThreadSafeDbContext;
 
-[SuppressMessage("Usage", "EF1001:Internal EF Core API usage.")]
 internal sealed class ThreadSafeDbSet<TEntity> :
-    InternalDbSet<TEntity>,
+    DbSet<TEntity>,
     IQueryable<TEntity>,
     IAsyncEnumerable<TEntity>
     where TEntity : class
@@ -17,8 +16,7 @@ internal sealed class ThreadSafeDbSet<TEntity> :
     private readonly SemaphoreSlim semaphoreSlim;
     private readonly DbSet<TEntity> set;
 
-    public ThreadSafeDbSet(DbContext context, DbSet<TEntity> set, SemaphoreSlim semaphoreSlim)
-        : base(context, set.EntityType.Name)
+    public ThreadSafeDbSet(DbSet<TEntity> set, SemaphoreSlim semaphoreSlim)
     {
         this.set = set;
         this.semaphoreSlim = semaphoreSlim;
@@ -26,146 +24,194 @@ internal sealed class ThreadSafeDbSet<TEntity> :
 
     public override IEntityType EntityType => this.set.EntityType;
 
-    public override IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new())
+    public override LocalView<TEntity> Local => SafeExecute(() => this.set.Local);
+
+    public override EntityEntry<TEntity> Add(TEntity entity)
+    {
+        return SafeExecute(() => this.set.Add(entity));
+    }
+
+    public override EntityEntry<TEntity> Attach(TEntity entity)
+    {
+        return SafeExecute(() => this.set.Attach(entity));
+    }
+
+    public override EntityEntry<TEntity> Update(TEntity entity)
+    {
+        return SafeExecute(() => this.set.Update(entity));
+    }
+
+    public override ValueTask<EntityEntry<TEntity>> AddAsync(TEntity entity,
+        CancellationToken cancellationToken = new())
+    {
+        return SafeExecuteValueAsync(() => this.set.AddAsync(entity, cancellationToken), cancellationToken);
+    }
+
+    public override EntityEntry<TEntity> Remove(TEntity entity)
+    {
+        return SafeExecute(() => this.set.Remove(entity));
+    }
+
+    public override void AddRange(params TEntity[] entities)
+    {
+        SafeExecute(() => this.set.AddRange(entities));
+    }
+
+    public override void AddRange(IEnumerable<TEntity> entities)
+    {
+        SafeExecute(() => this.set.AddRange(entities));
+    }
+
+    public override void AttachRange(params TEntity[] entities)
+    {
+        SafeExecute(() => this.set.AttachRange(entities));
+    }
+
+    public override void AttachRange(IEnumerable<TEntity> entities)
+    {
+        SafeExecute(() => this.set.AttachRange(entities));
+    }
+
+    public override void RemoveRange(params TEntity[] entities)
+    {
+        SafeExecute(() => this.set.RemoveRange(entities));
+    }
+
+    public override void RemoveRange(IEnumerable<TEntity> entities)
+    {
+        SafeExecute(() => this.set.RemoveRange(entities));
+    }
+
+    public override void UpdateRange(params TEntity[] entities)
+    {
+        SafeExecute(() => this.set.UpdateRange(entities));
+    }
+
+    public override void UpdateRange(IEnumerable<TEntity> entities)
+    {
+        SafeExecute(() => this.set.UpdateRange(entities));
+    }
+
+    public override Task AddRangeAsync(params TEntity[] entities)
+    {
+        return SafeExecuteAsync(() => this.set.AddRangeAsync(entities));
+    }
+
+    public override Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = new())
+    {
+        return SafeExecuteAsync(() => this.set.AddRangeAsync(entities, cancellationToken), cancellationToken);
+    }
+
+    public override EntityEntry<TEntity> Entry(TEntity entity)
+    {
+        return SafeExecute(() => this.set.Entry(entity));
+    }
+
+    public override TEntity? Find(params Object?[]? keyValues)
+    {
+        return SafeExecute(() => this.set.Find(keyValues));
+    }
+
+    public override ValueTask<TEntity?> FindAsync(Object?[]? keyValues, CancellationToken cancellationToken)
+    {
+        return SafeExecuteValueAsync(() => this.set.FindAsync(keyValues, cancellationToken), cancellationToken);
+    }
+
+    public override ValueTask<TEntity?> FindAsync(params Object?[]? keyValues)
+    {
+        return SafeExecuteValueAsync(() => this.set.FindAsync(keyValues));
+    }
+
+
+    private void SafeExecute(Action func)
     {
         try
         {
-            this.semaphoreSlim.Wait(cancellationToken);
-            return (this.set as IAsyncEnumerable<TEntity>)!.GetAsyncEnumerator(cancellationToken);
+            this.semaphoreSlim.Wait();
+            func();
         }
         finally
         {
             if (this.semaphoreSlim.CurrentCount == 0)
                 this.semaphoreSlim.Release();
         }
+    }
+
+    private T SafeExecute<T>(Func<T> func)
+    {
+        try
+        {
+            this.semaphoreSlim.Wait();
+            return func();
+        }
+        finally
+        {
+            if (this.semaphoreSlim.CurrentCount == 0)
+                this.semaphoreSlim.Release();
+        }
+    }
+
+    private async ValueTask<T> SafeExecuteValueAsync<T>(Func<ValueTask<T>> func,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await this.semaphoreSlim.WaitAsync(cancellationToken);
+            return await func();
+        }
+        finally
+        {
+            if (this.semaphoreSlim.CurrentCount == 0)
+                this.semaphoreSlim.Release();
+        }
+    }
+
+    private async Task SafeExecuteAsync(Func<Task> func, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await this.semaphoreSlim.WaitAsync(cancellationToken);
+            await func();
+        }
+        finally
+        {
+            if (this.semaphoreSlim.CurrentCount == 0)
+                this.semaphoreSlim.Release();
+        }
+    }
+
+    #region Queryable
+
+    public Type ElementType => (this.set as IQueryable).ElementType;
+    public Expression Expression => (this.set as IQueryable).Expression;
+
+    public override IQueryable<TEntity> AsQueryable()
+    {
+        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
+    }
+
+    public override IAsyncEnumerable<TEntity> AsAsyncEnumerable()
+    {
+        return new ThreadSafeQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
+    }
+
+    public override IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new())
+    {
+        return SafeExecute(() => (this.set as IAsyncEnumerable<TEntity>)!.GetAsyncEnumerator(cancellationToken));
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 
     public IQueryProvider Provider =>
         new ThreadSafeQueryProvider((this.set as IQueryable).Provider, this.semaphoreSlim);
 
-
     public IEnumerator<TEntity> GetEnumerator()
     {
-        try
-        {
-            this.semaphoreSlim.Wait();
-            return (this.set as IQueryable<TEntity>)!.GetEnumerator();
-        }
-        finally
-        {
-            if (this.semaphoreSlim.CurrentCount == 0)
-                this.semaphoreSlim.Release();
-        }
+        return SafeExecute(() => (this.set as IEnumerable<TEntity>)!.GetEnumerator());
     }
 
-    public override EntityEntry<TEntity> Add(TEntity entity)
-    {
-        this.semaphoreSlim.Wait();
-        EntityEntry<TEntity> result = base.Add(entity);
-        this.semaphoreSlim.Release();
-        return result;
-    }
-
-    public override EntityEntry<TEntity> Attach(TEntity entity)
-    {
-        this.semaphoreSlim.Wait();
-        EntityEntry<TEntity> result = base.Attach(entity);
-        this.semaphoreSlim.Release();
-        return result;
-    }
-
-    public override EntityEntry<TEntity> Update(TEntity entity)
-    {
-        this.semaphoreSlim.Wait();
-        EntityEntry<TEntity> result = base.Update(entity);
-        this.semaphoreSlim.Release();
-        return result;
-    }
-
-    public override async ValueTask<EntityEntry<TEntity>> AddAsync(TEntity entity,
-        CancellationToken cancellationToken = new())
-    {
-        await this.semaphoreSlim.WaitAsync(cancellationToken);
-        EntityEntry<TEntity> result = await base.AddAsync(entity);
-        this.semaphoreSlim.Release();
-        return result;
-    }
-
-    public override EntityEntry<TEntity> Remove(TEntity entity)
-    {
-        this.semaphoreSlim.Wait();
-        EntityEntry<TEntity> result = base.Remove(entity);
-        this.semaphoreSlim.Release();
-        return result;
-    }
-
-    public override void AddRange(params TEntity[] entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.AddRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void AddRange(IEnumerable<TEntity> entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.AddRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void AttachRange(params TEntity[] entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.AttachRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void AttachRange(IEnumerable<TEntity> entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.AttachRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void RemoveRange(params TEntity[] entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.RemoveRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void RemoveRange(IEnumerable<TEntity> entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.RemoveRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void UpdateRange(params TEntity[] entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.UpdateRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override void UpdateRange(IEnumerable<TEntity> entities)
-    {
-        this.semaphoreSlim.Wait();
-        base.UpdateRange(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override async Task AddRangeAsync(params TEntity[] entities)
-    {
-        await this.semaphoreSlim.WaitAsync();
-        await base.AddRangeAsync(entities);
-        this.semaphoreSlim.Release();
-    }
-
-    public override async Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = new())
-    {
-        await this.semaphoreSlim.WaitAsync(cancellationToken);
-        await base.AddRangeAsync(entities);
-        this.semaphoreSlim.Release();
-    }
+    #endregion
 }

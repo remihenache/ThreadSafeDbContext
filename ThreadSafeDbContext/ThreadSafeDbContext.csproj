@@ -7,7 +7,7 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>ThreadSafeDbContext</Title>
         <Authors>R. Henache</Authors>
-        <Description>The ThreadSafeDbContext class is a wrapper around the DbContext class and provides thread safe access to the DbContext class. </Description>
+        <Description>The ThreadSafeDbContext class is a wrapper around the DbContext class and provides thread safe access to the DbContext class.</Description>
         <PackageProjectUrl>https://github.com/remihenache/ThreadSafeDbContext</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>

@@ -27,7 +27,7 @@ public class ThreadSafeDbContext : DbContext
     public override DbSet<TEntity> Set<TEntity>()
     {
         this.semaphoreSlim.Wait();
-        ThreadSafeDbSet<TEntity> result = new(this, base.Set<TEntity>(), this.semaphoreSlim);
+        ThreadSafeDbSet<TEntity> result = new(base.Set<TEntity>(), this.semaphoreSlim);
         this.semaphoreSlim.Release();
         return result;
     }
