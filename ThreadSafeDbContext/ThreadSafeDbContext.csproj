@@ -13,6 +13,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/remihenache/ThreadSafeDbContext</RepositoryUrl>
         <RepositoryType>Git</RepositoryType>
+        <Version>1.0.1</Version>
     </PropertyGroup>
 
     <ItemGroup>
