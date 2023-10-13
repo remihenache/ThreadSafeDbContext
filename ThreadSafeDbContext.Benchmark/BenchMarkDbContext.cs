@@ -4,7 +4,7 @@ namespace ThreadSafeDbContext.Benchmark;
 
 public class BenchMarkDbContext : DbContext
 {
-    public BenchMarkDbContext(DbContextOptionsBuilder<BenchMarkDbContext> optionsBuilder) : base(optionsBuilder.Options)
+    public BenchMarkDbContext(DbContextOptions<BenchMarkDbContext> options) : base(options)
     {
     }
 

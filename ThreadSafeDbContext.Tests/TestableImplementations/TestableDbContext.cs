@@ -2,7 +2,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations
 
 public class TestableDbContext : ThreadSafeDbContext
 {
-    public TestableDbContext(DbContextOptionsBuilder<TestableDbContext> optionsBuilder) : base(optionsBuilder)
+    public TestableDbContext(DbContextOptions<TestableDbContext> optionsBuilder) : base(optionsBuilder)
     {
     }
 

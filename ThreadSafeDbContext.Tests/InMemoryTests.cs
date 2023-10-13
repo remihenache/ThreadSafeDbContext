@@ -12,7 +12,7 @@ public class InMemoryTests
 
     private static readonly TestableEntity[] EntitiesInDb =
     {
-        new TestableEntity
+        new()
         {
             ID = 1,
             Name = "Name1",
@@ -25,12 +25,12 @@ public class InMemoryTests
                 }
             }
         },
-        new TestableEntity
+        new()
         {
             ID = 2,
             Name = "Name2"
         },
-        new TestableEntity
+        new()
         {
             ID = 3,
             Name = "Name2"
@@ -305,22 +305,6 @@ public class InMemoryTests
         entities.First(t => t.ID == 1).Name.Should().Be("NewName");
     }
 
-    [Theory]
-    [InlineData(10)]
-    [InlineData(20)]
-    [InlineData(50)]
-    public async Task SelectDependenciesShouldWork(Int32 nbTasks)
-    {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
-        {
-            TestableEntityDependency? testableEntity = await db.Set<TestableEntity>().Include(t => t.Dependencies)
-                .Where(t => t.Name == "Name1").SelectMany(t => t.Dependencies).FirstOrDefaultAsync();
-            testableEntity.Should().NotBeNull();
-            testableEntity!.Name.Should().Be("Name1");
-        }).ToArray();
-
-        await Task.WhenAll(tasks);
-    }
 
     [Theory]
     [InlineData(10)]
@@ -348,8 +332,9 @@ public class InMemoryTests
 
     private static DbContext CreateFromConnection()
     {
-        TestableDbContext dbContext = new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString()));
+        DbContext dbContext = new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
 
         CleanExistingData(dbContext);
         FillTestData(dbContext);

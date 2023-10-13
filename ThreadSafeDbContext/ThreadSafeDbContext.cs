@@ -8,8 +8,8 @@ public class ThreadSafeDbContext : DbContext
     {
     }
 
-    public ThreadSafeDbContext(DbContextOptionsBuilder optionsBuilder)
-        : base(optionsBuilder
+    public ThreadSafeDbContext(DbContextOptions options)
+        : base(new DbContextOptionsBuilder(options)
             .EnableThreadSafetyChecks(false)
             .Options)
     {

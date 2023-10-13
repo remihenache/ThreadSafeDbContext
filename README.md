@@ -20,7 +20,7 @@ class.
 ```csharp
 public class MyDbContext : ThreadSafeDbContext
 {
-    public MyDbContext(DbContextOptionsBuilder<MyDbContext> optionsBuilder) : base(optionsBuilder)
+    public MyDbContext(DbContextOptions<MyDbContext> options) : base(options)
     {
     }
 }
@@ -36,7 +36,7 @@ public class MyDbContext : ThreadSafeDbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlServer("connection string");
-        base.OnConfiguring(optionsBuilder);
+        base.OnConfiguring(optionsBuilder); // don't forget to call the base method
     }
 }
 ``` 
@@ -51,7 +51,6 @@ public class MyDbContext : ThreadSafeDbContext
 
 ## Cons
 
-- The only one "non compliant part" is the constructor, that use DbContextOptionsBuilder instead of DbContextOptions.
 - The thread safety comes at a cost of performance. The performance hit is not significant but it is there.
 - The project is not an official implementation from Microsoft. It is a custom implementation, and may not be ready for
   production use.

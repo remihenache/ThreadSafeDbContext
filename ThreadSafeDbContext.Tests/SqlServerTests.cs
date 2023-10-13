@@ -12,7 +12,7 @@ public class SqlServerTests
 
     private static readonly TestableEntity[] EntitiesInDb =
     {
-        new TestableEntity
+        new()
         {
             ID = 1,
             Name = "Name1",
@@ -25,12 +25,12 @@ public class SqlServerTests
                 }
             }
         },
-        new TestableEntity
+        new()
         {
             ID = 2,
             Name = "Name2"
         },
-        new TestableEntity
+        new()
         {
             ID = 3,
             Name = "Name2"
@@ -348,11 +348,12 @@ public class SqlServerTests
 
     private static DbContext CreateFromConnection()
     {
-        TestableDbContext dbContext = new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
+        DbContext dbContext = new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
             .UseSqlServer(
                 "Server=localhost,1436;Database=ThreadSafeDbContext;TrustServerCertificate=true;MultipleActiveResultSets=true;User ID=sa;Password=P@ssword11!!;", //MyP@ssw0rd!
                 options => options.EnableRetryOnFailure()
-            ));
+            )
+            .Options);
 
         CleanExistingData(dbContext);
         FillTestData(dbContext);

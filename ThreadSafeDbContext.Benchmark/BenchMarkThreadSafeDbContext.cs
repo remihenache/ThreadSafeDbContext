@@ -4,8 +4,8 @@ namespace ThreadSafeDbContext.Benchmark;
 
 public class BenchMarkThreadSafeDbContext : Microsoft.EntityFrameworkCore.ThreadSafe.ThreadSafeDbContext
 {
-    public BenchMarkThreadSafeDbContext(DbContextOptionsBuilder<BenchMarkThreadSafeDbContext> optionsBuilder) : base(
-        optionsBuilder)
+    public BenchMarkThreadSafeDbContext(DbContextOptions<BenchMarkThreadSafeDbContext> options) : base(
+        options)
     {
     }
 
