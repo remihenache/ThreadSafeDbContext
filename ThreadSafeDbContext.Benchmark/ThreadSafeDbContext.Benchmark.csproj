@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.9"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.12"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.12"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.12"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.12"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ThreadSafeDbContext\ThreadSafeDbContext.csproj"/>
+    </ItemGroup>
+
+</Project>

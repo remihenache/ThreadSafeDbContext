@@ -42,44 +42,13 @@ internal class ThreadSafeEnumerator : IEnumerator
     public Object Current => this.Enumerator.Current!;
 }
 
-internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerator<T>, IAsyncEnumerator<T>
+internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerator<T>
 {
     public ThreadSafeEnumerator(IEnumerator<T> enumerator, SemaphoreSlim semaphoreSlim)
         : base(enumerator, semaphoreSlim)
     {
     }
 
-    public async ValueTask<Boolean> MoveNextAsync()
-    {
-        await this.SemaphoreSlim.WaitAsync();
-        try
-        {
-            if (this.Enumerator is IAsyncEnumerator<T> asyncEnumerator)
-                return await asyncEnumerator.MoveNextAsync();
-            return (this.Enumerator as IEnumerator<T>)!.MoveNext();
-        }
-        finally
-        {
-            this.SemaphoreSlim.Release();
-        }
-    }
-
-    T IAsyncEnumerator<T>.Current => ((T) this.Enumerator.Current)!;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (this.Enumerator is not IAsyncDisposable disposable)
-            return;
-        await this.SemaphoreSlim.WaitAsync();
-        try
-        {
-            await disposable.DisposeAsync();
-        }
-        finally
-        {
-            this.SemaphoreSlim.Release();
-        }
-    }
 
     public void Dispose()
     {

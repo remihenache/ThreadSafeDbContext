@@ -56,6 +56,13 @@ public class MyDbContext : ThreadSafeDbContext
 - The project is not an official implementation from Microsoft. It is a custom implementation, and may not be ready for
   production use.
 
+# Performance benchmark
+
+| Method               |     Mean |   Error |  StdDev |
+|----------------------|---------:|--------:|--------:|
+| Standard DbContext   | 280.6 us | 4.30 us | 4.41 us |
+| ThreadSafe DbContext | 291.1 us | 4.48 us | 5.16 us |
+
 # More about
 
 You can find more details about the implementation
