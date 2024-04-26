@@ -8,8 +8,8 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe;
 
 internal sealed class ThreadSafeDbSet<TEntity> :
     DbSet<TEntity>,
-    IQueryable<TEntity>,
-    IAsyncEnumerable<TEntity>
+    IAsyncEnumerable<TEntity>,
+    IOrderedQueryable<TEntity>
     where TEntity : class
 {
     private readonly SemaphoreSlim semaphoreSlim;
@@ -21,178 +21,178 @@ internal sealed class ThreadSafeDbSet<TEntity> :
         this.semaphoreSlim = semaphoreSlim;
     }
 
-    public override IEntityType EntityType => this.set.EntityType;
+    public override IEntityType EntityType => set.EntityType;
 
-    public override LocalView<TEntity> Local => SafeExecute(() => this.set.Local);
+    public override LocalView<TEntity> Local => SafeExecute(() => set.Local);
 
     public override EntityEntry<TEntity> Add(TEntity entity)
     {
-        return SafeExecute(() => this.set.Add(entity));
+        return SafeExecute(() => set.Add(entity));
     }
 
     public override EntityEntry<TEntity> Attach(TEntity entity)
     {
-        return SafeExecute(() => this.set.Attach(entity));
+        return SafeExecute(() => set.Attach(entity));
     }
 
     public override EntityEntry<TEntity> Update(TEntity entity)
     {
-        return SafeExecute(() => this.set.Update(entity));
+        return SafeExecute(() => set.Update(entity));
     }
 
     public override ValueTask<EntityEntry<TEntity>> AddAsync(TEntity entity,
         CancellationToken cancellationToken = new())
     {
-        return SafeExecuteValueAsync(() => this.set.AddAsync(entity, cancellationToken), cancellationToken);
+        return SafeExecuteValueAsync(() => set.AddAsync(entity, cancellationToken), cancellationToken);
     }
 
     public override EntityEntry<TEntity> Remove(TEntity entity)
     {
-        return SafeExecute(() => this.set.Remove(entity));
+        return SafeExecute(() => set.Remove(entity));
     }
 
     public override void AddRange(params TEntity[] entities)
     {
-        SafeExecute(() => this.set.AddRange(entities));
+        SafeExecute(() => set.AddRange(entities));
     }
 
     public override void AddRange(IEnumerable<TEntity> entities)
     {
-        SafeExecute(() => this.set.AddRange(entities));
+        SafeExecute(() => set.AddRange(entities));
     }
 
     public override void AttachRange(params TEntity[] entities)
     {
-        SafeExecute(() => this.set.AttachRange(entities));
+        SafeExecute(() => set.AttachRange(entities));
     }
 
     public override void AttachRange(IEnumerable<TEntity> entities)
     {
-        SafeExecute(() => this.set.AttachRange(entities));
+        SafeExecute(() => set.AttachRange(entities));
     }
 
     public override void RemoveRange(params TEntity[] entities)
     {
-        SafeExecute(() => this.set.RemoveRange(entities));
+        SafeExecute(() => set.RemoveRange(entities));
     }
 
     public override void RemoveRange(IEnumerable<TEntity> entities)
     {
-        SafeExecute(() => this.set.RemoveRange(entities));
+        SafeExecute(() => set.RemoveRange(entities));
     }
 
     public override void UpdateRange(params TEntity[] entities)
     {
-        SafeExecute(() => this.set.UpdateRange(entities));
+        SafeExecute(() => set.UpdateRange(entities));
     }
 
     public override void UpdateRange(IEnumerable<TEntity> entities)
     {
-        SafeExecute(() => this.set.UpdateRange(entities));
+        SafeExecute(() => set.UpdateRange(entities));
     }
 
     public override Task AddRangeAsync(params TEntity[] entities)
     {
-        return SafeExecuteAsync(() => this.set.AddRangeAsync(entities));
+        return SafeExecuteAsync(() => set.AddRangeAsync(entities));
     }
 
     public override Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = new())
     {
-        return SafeExecuteAsync(() => this.set.AddRangeAsync(entities, cancellationToken), cancellationToken);
+        return SafeExecuteAsync(() => set.AddRangeAsync(entities, cancellationToken), cancellationToken);
     }
 
     public override EntityEntry<TEntity> Entry(TEntity entity)
     {
-        return SafeExecute(() => this.set.Entry(entity));
+        return SafeExecute(() => set.Entry(entity));
     }
 
-    public override TEntity? Find(params Object?[]? keyValues)
+    public override TEntity? Find(params object?[]? keyValues)
     {
-        return SafeExecute(() => this.set.Find(keyValues));
+        return SafeExecute(() => set.Find(keyValues));
     }
 
-    public override ValueTask<TEntity?> FindAsync(Object?[]? keyValues, CancellationToken cancellationToken)
+    public override ValueTask<TEntity?> FindAsync(object?[]? keyValues, CancellationToken cancellationToken)
     {
-        return SafeExecuteValueAsync(() => this.set.FindAsync(keyValues, cancellationToken), cancellationToken);
+        return SafeExecuteValueAsync(() => set.FindAsync(keyValues, cancellationToken), cancellationToken);
     }
 
-    public override ValueTask<TEntity?> FindAsync(params Object?[]? keyValues)
+    public override ValueTask<TEntity?> FindAsync(params object?[]? keyValues)
     {
-        return SafeExecuteValueAsync(() => this.set.FindAsync(keyValues));
+        return SafeExecuteValueAsync(() => set.FindAsync(keyValues));
     }
 
 
     private void SafeExecute(Action func)
     {
-        this.semaphoreSlim.Wait();
+        semaphoreSlim.Wait();
         try
         {
             func();
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
     private T SafeExecute<T>(Func<T> func)
     {
-        this.semaphoreSlim.Wait();
+        semaphoreSlim.Wait();
         try
         {
             return func();
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
     private async ValueTask<T> SafeExecuteValueAsync<T>(Func<ValueTask<T>> func,
         CancellationToken cancellationToken = default)
     {
-        await this.semaphoreSlim.WaitAsync(cancellationToken);
+        await semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
             return await func();
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
     private async Task SafeExecuteAsync(Func<Task> func, CancellationToken cancellationToken = default)
     {
-        await this.semaphoreSlim.WaitAsync(cancellationToken);
+        await semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
             await func();
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
     #region Queryable
 
-    public Type ElementType => (this.set as IQueryable).ElementType;
-    public Expression Expression => (this.set as IQueryable).Expression;
+    public Type ElementType => (set as IQueryable).ElementType;
+    public Expression Expression => (set as IQueryable).Expression;
 
     public override IQueryable<TEntity> AsQueryable()
     {
-        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
+        return new ThreadSafeAsyncQueryable<TEntity>(set.AsQueryable(), semaphoreSlim);
     }
 
     public override IAsyncEnumerable<TEntity> AsAsyncEnumerable()
     {
-        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim);
+        return new ThreadSafeAsyncQueryable<TEntity>(set.AsQueryable(), semaphoreSlim);
     }
 
     public override IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
-        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetAsyncEnumerator(
+        return new ThreadSafeAsyncQueryable<TEntity>(set.AsQueryable(), semaphoreSlim).GetAsyncEnumerator(
             cancellationToken);
     }
 
@@ -202,11 +202,11 @@ internal sealed class ThreadSafeDbSet<TEntity> :
     }
 
     public IQueryProvider Provider =>
-        new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).Provider;
+        new ThreadSafeAsyncQueryable<TEntity>(set.AsQueryable(), semaphoreSlim).Provider;
 
     public IEnumerator<TEntity> GetEnumerator()
     {
-        return new ThreadSafeAsyncQueryable<TEntity>(this.set.AsQueryable(), this.semaphoreSlim).GetEnumerator();
+        return new ThreadSafeAsyncQueryable<TEntity>(set.AsQueryable(), semaphoreSlim).GetEnumerator();
     }
 
     #endregion

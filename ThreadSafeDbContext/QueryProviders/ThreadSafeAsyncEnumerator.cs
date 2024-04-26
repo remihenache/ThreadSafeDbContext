@@ -11,31 +11,31 @@ internal sealed class ThreadSafeAsyncEnumerator<T> : IAsyncEnumerator<T>
         this.semaphoreSlim = semaphoreSlim;
     }
 
-    public async ValueTask<Boolean> MoveNextAsync()
+    public async ValueTask<bool> MoveNextAsync()
     {
-        await this.semaphoreSlim.WaitAsync();
+        await semaphoreSlim.WaitAsync();
         try
         {
-            return await this.enumerator.MoveNextAsync();
+            return await enumerator.MoveNextAsync();
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
-    T IAsyncEnumerator<T>.Current => this.enumerator.Current;
+    T IAsyncEnumerator<T>.Current => enumerator.Current;
 
     public async ValueTask DisposeAsync()
     {
-        await this.semaphoreSlim.WaitAsync();
+        await semaphoreSlim.WaitAsync();
         try
         {
-            await this.enumerator.DisposeAsync();
+            await enumerator.DisposeAsync();
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 }

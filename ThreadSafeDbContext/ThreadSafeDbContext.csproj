@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -13,12 +12,13 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/remihenache/ThreadSafeDbContext</RepositoryUrl>
         <RepositoryType>Git</RepositoryType>
-        <Version>1.0.7</Version>
+        <Version>8.0.0</Version>
         <RootNamespace>Microsoft.EntityFrameworkCore.ThreadSafe</RootNamespace>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.12"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -118,11 +118,11 @@ public class DbContextBenchmarker
         await dbContext.Set<BenchMarkEntity>().AddRangeAsync(EntitiesInDb);
         await dbContext.SaveChangesAsync();
 
-        List<BenchMarkEntity> benchMarkEntitiesName2 =
+        var benchMarkEntitiesName2 =
             await dbContext.Set<BenchMarkEntity>().Where(e => e.Name == "Name2").ToListAsync();
-        List<BenchMarkEntity> benchMarkEntitiesName3 = await dbContext.Set<BenchMarkEntity>()
+        var benchMarkEntitiesName3 = await dbContext.Set<BenchMarkEntity>()
             .Where(e => e.Name == "Name3").OrderByDescending(e => e.ID).ToListAsync();
-        List<String> benchMarkEntitiesNames = await dbContext.Set<BenchMarkEntity>().Select(e => e.Name).ToListAsync();
+        var benchMarkEntitiesNames = await dbContext.Set<BenchMarkEntity>().Select(e => e.Name).ToListAsync();
 
         dbContext.Set<BenchMarkEntity>().RemoveRange(EntitiesInDb);
         await dbContext.SaveChangesAsync();
@@ -137,11 +137,11 @@ public class DbContextBenchmarker
         await dbContext.Set<BenchMarkEntity>().AddRangeAsync(EntitiesInDb);
         await dbContext.SaveChangesAsync();
 
-        List<BenchMarkEntity> benchMarkEntitiesName2 =
+        var benchMarkEntitiesName2 =
             await dbContext.Set<BenchMarkEntity>().Where(e => e.Name == "Name2").ToListAsync();
-        List<BenchMarkEntity> benchMarkEntitiesName3 = await dbContext.Set<BenchMarkEntity>()
+        var benchMarkEntitiesName3 = await dbContext.Set<BenchMarkEntity>()
             .Where(e => e.Name == "Name3").OrderByDescending(e => e.ID).ToListAsync();
-        List<String> benchMarkEntitiesNames = await dbContext.Set<BenchMarkEntity>().Select(e => e.Name).ToListAsync();
+        var benchMarkEntitiesNames = await dbContext.Set<BenchMarkEntity>().Select(e => e.Name).ToListAsync();
 
         dbContext.Set<BenchMarkEntity>().RemoveRange(EntitiesInDb);
         await dbContext.SaveChangesAsync();

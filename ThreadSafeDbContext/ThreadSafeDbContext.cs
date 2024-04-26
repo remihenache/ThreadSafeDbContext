@@ -23,41 +23,107 @@ public class ThreadSafeDbContext : DbContext
 
     public override DbSet<TEntity> Set<TEntity>()
     {
-        this.semaphoreSlim.Wait();
+        semaphoreSlim.Wait();
         try
         {
-            return new ThreadSafeDbSet<TEntity>(base.Set<TEntity>(), this.semaphoreSlim);
+            return new ThreadSafeDbSet<TEntity>(base.Set<TEntity>(), semaphoreSlim);
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
+        }
+    }
+
+    public override DbSet<TEntity> Set<TEntity>(string name)
+    {
+        semaphoreSlim.Wait();
+        try
+        {
+            return new ThreadSafeDbSet<TEntity>(base.Set<TEntity>(name), semaphoreSlim);
+        }
+        finally
+        {
+            semaphoreSlim.Release();
+        }
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = new())
+    {
+        await semaphoreSlim.WaitAsync(cancellationToken);
+        try
+        {
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+        finally
+        {
+            semaphoreSlim.Release();
+        }
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        semaphoreSlim.Wait();
+        try
+        {
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+        finally
+        {
+            semaphoreSlim.Release();
         }
     }
 
 
-    public override async Task<Int32> SaveChangesAsync(CancellationToken cancellationToken = new())
+    public override object? Find(Type entityType, params object?[]? keyValues)
     {
-        await this.semaphoreSlim.WaitAsync(cancellationToken);
+        semaphoreSlim.Wait();
         try
         {
-            return await base.SaveChangesAsync(cancellationToken);
+            return base.Find(entityType, keyValues);
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
-    public override Int32 SaveChanges()
+    public override async ValueTask<object?> FindAsync(Type entityType, params object?[]? keyValues)
     {
-        this.semaphoreSlim.Wait();
+        await semaphoreSlim.WaitAsync();
         try
         {
-            return base.SaveChanges();
+            return await base.FindAsync(entityType, keyValues);
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
+    }
+
+    public override async ValueTask<object?> FindAsync(Type entityType, object?[]? keyValues,
+        CancellationToken cancellationToken)
+    {
+        await semaphoreSlim.WaitAsync(cancellationToken);
+        try
+        {
+            return await base.FindAsync(entityType, keyValues, cancellationToken);
+        }
+        finally
+        {
+            semaphoreSlim.Release();
+        }
+    }
+
+    public override void Dispose()
+    {
+        semaphoreSlim.Dispose();
+        base.Dispose();
+    }
+
+    public override ValueTask DisposeAsync()
+    {
+        semaphoreSlim.Dispose();
+        return base.DisposeAsync();
     }
 }

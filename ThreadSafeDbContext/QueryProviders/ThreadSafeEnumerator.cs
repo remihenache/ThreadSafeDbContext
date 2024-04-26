@@ -9,37 +9,37 @@ internal class ThreadSafeEnumerator : IEnumerator
 
     public ThreadSafeEnumerator(IEnumerator enumerator, SemaphoreSlim semaphoreSlim)
     {
-        this.Enumerator = enumerator;
-        this.SemaphoreSlim = semaphoreSlim;
+        Enumerator = enumerator;
+        SemaphoreSlim = semaphoreSlim;
     }
 
-    public Boolean MoveNext()
+    public bool MoveNext()
     {
-        this.SemaphoreSlim.Wait();
+        SemaphoreSlim.Wait();
         try
         {
-            return this.Enumerator.MoveNext();
+            return Enumerator.MoveNext();
         }
         finally
         {
-            this.SemaphoreSlim.Release();
+            SemaphoreSlim.Release();
         }
     }
 
     public void Reset()
     {
-        this.SemaphoreSlim.Wait();
+        SemaphoreSlim.Wait();
         try
         {
-            this.Enumerator.Reset();
+            Enumerator.Reset();
         }
         finally
         {
-            this.SemaphoreSlim.Release();
+            SemaphoreSlim.Release();
         }
     }
 
-    public Object Current => this.Enumerator.Current!;
+    public object Current => Enumerator.Current!;
 }
 
 internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerator<T>
@@ -52,17 +52,17 @@ internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerato
 
     public void Dispose()
     {
-        if (this.Enumerator is not IDisposable disposable) return;
-        this.SemaphoreSlim.Wait();
+        if (Enumerator is not IDisposable disposable) return;
+        SemaphoreSlim.Wait();
         try
         {
             disposable.Dispose();
         }
         finally
         {
-            this.SemaphoreSlim.Release();
+            SemaphoreSlim.Release();
         }
     }
 
-    T IEnumerator<T>.Current => ((T) this.Enumerator.Current)!;
+    T IEnumerator<T>.Current => ((T) Enumerator.Current)!;
 }

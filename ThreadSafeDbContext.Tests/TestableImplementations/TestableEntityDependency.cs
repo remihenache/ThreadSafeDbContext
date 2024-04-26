@@ -2,7 +2,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations
 
 public class TestableEntityDependency
 {
-    public Int32 ID { get; set; }
-    public Int32 TestableEntityID { get; set; }
-    public String Name { get; set; } = String.Empty;
+    public int ID { get; set; }
+    public int TestableEntityID { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

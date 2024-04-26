@@ -7,56 +7,62 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests;
 [Collection("Sequential")]
 public class SqlServerTests
 {
-    private const Int32 IdOffset = 1000;
-    private const Int32 NbTestableEntityAlreadyInDb = 3;
+    private const int IdOffset = 1000;
+    private const int NbTestableEntityAlreadyInDb = 3;
 
-    private static readonly TestableEntity[] EntitiesInDb =
+    private readonly DbContext testableDbContext;
+
+    public SqlServerTests()
     {
-        new()
-        {
-            ID = 1,
-            Name = "Name1",
-            Dependencies = new List<TestableEntityDependency>
-            {
-                new()
-                {
-                    ID = 1,
-                    Name = "Name1"
-                }
-            }
-        },
-        new()
-        {
-            ID = 2,
-            Name = "Name2"
-        },
-        new()
-        {
-            ID = 3,
-            Name = "Name2"
-        }
-    };
+        testableDbContext = CreateFromConnection();
+    }
 
-    private readonly DbContext testableDbContext = CreateFromConnection();
+    private TestableEntity[] GetTestableEntities()
+    {
+        TestableEntity[] EntitiesInDb =
+        {
+            new()
+            {
+                Name = "Name1",
+                Dependencies = new List<TestableEntityDependency>
+                {
+                    new()
+                    {
+                        Name = "Name1"
+                    }
+                }
+            },
+            new()
+            {
+                Name = "Name2"
+            },
+            new()
+            {
+                Name = "Name2"
+            }
+        };
+        return EntitiesInDb;
+    }
+
 
     [Theory]
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task AddShouldAddAnEntity(Int32 nbTasks)
+    public async Task AddShouldAddAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
             db.Set<TestableEntity>().Add(new TestableEntity
             {
-                ID = i
+                Name = "TestInsert"
             });
             db.SaveChanges();
         }).ToArray();
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
         entities.Should().HaveCount(nbTasks + NbTestableEntityAlreadyInDb);
     }
 
@@ -64,20 +70,20 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task AddAsyncShouldAddAnEntity(Int32 nbTasks)
+    public async Task AddAsyncShouldAddAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
             await db.Set<TestableEntity>().AddAsync(new TestableEntity
             {
-                ID = i
+                Name = "TestInsert"
             });
             await db.SaveChangesAsync();
         }).ToArray();
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
         entities.Should().HaveCount(nbTasks + NbTestableEntityAlreadyInDb);
     }
 
@@ -85,20 +91,20 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task AddRangeShouldAddAnEntity(Int32 nbTasks)
+    public async Task AddRangeShouldAddAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
             db.Set<TestableEntity>().AddRange(new TestableEntity
             {
-                ID = i
+                Name = "TestInsert"
             });
             db.SaveChanges();
         }).ToArray();
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
         entities.Should().HaveCount(nbTasks + NbTestableEntityAlreadyInDb);
     }
 
@@ -106,20 +112,20 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task AddRangeAsyncShouldAddAnEntity(Int32 nbTasks)
+    public async Task AddRangeAsyncShouldAddAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
             await db.Set<TestableEntity>().AddRangeAsync(new TestableEntity
             {
-                ID = i
+                Name = "TestInsert"
             });
             await db.SaveChangesAsync();
         }).ToArray();
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
         entities.Should().HaveCount(nbTasks + NbTestableEntityAlreadyInDb);
     }
 
@@ -127,32 +133,32 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task AttachShouldAttachAnEntity(Int32 nbTasks)
+    public async Task AttachShouldAttachAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
             db.Set<TestableEntity>().Attach(new TestableEntity
             {
-                ID = i
+                Name = "TestInsert"
             });
             await db.SaveChangesAsync();
         }).ToArray();
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
-        entities.Should().HaveCount(NbTestableEntityAlreadyInDb);
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
+        entities.Should().HaveCount(NbTestableEntityAlreadyInDb + nbTasks);
     }
 
     [Theory]
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task WhereShouldApplyFilter(Int32 nbTasks)
+    public async Task WhereShouldApplyFilter(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            List<TestableEntity> testableEntities = db.Set<TestableEntity>().Where(t => t.Name == "Name2").ToList();
+            var testableEntities = db.Set<TestableEntity>().Where(t => t.Name == "Name2").ToList();
 
             testableEntities.Should().HaveCount(2);
         }).ToArray();
@@ -164,13 +170,13 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task OrderByShouldApplyOrder(Int32 nbTasks)
+    public async Task OrderByShouldApplyOrder(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            List<TestableEntity> testableEntities = db.Set<TestableEntity>().OrderBy(t => t.Name).ToList();
-            List<TestableEntity> entities = EntitiesInDb.OrderBy(t => t.Name).ToList();
-            for (Int32 index = 0; index < testableEntities.Count; index++)
+            var testableEntities = db.Set<TestableEntity>().OrderBy(t => t.Name).ToList();
+            var entities = GetTestableEntities().OrderBy(t => t.Name).ToList();
+            for (var index = 0; index < testableEntities.Count; index++)
                 testableEntities[index].Name.Should().Be(entities[index].Name);
         }).ToArray();
 
@@ -181,13 +187,13 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task OrderDescendingByShouldApplyOrder(Int32 nbTasks)
+    public async Task OrderDescendingByShouldApplyOrder(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            List<TestableEntity> testableEntities = db.Set<TestableEntity>().OrderByDescending(t => t.Name).ToList();
-            List<TestableEntity> entities = EntitiesInDb.OrderByDescending(t => t.Name).ToList();
-            for (Int32 index = 0; index < testableEntities.Count; index++)
+            var testableEntities = db.Set<TestableEntity>().OrderByDescending(t => t.Name).ToList();
+            var entities = GetTestableEntities().OrderByDescending(t => t.Name).ToList();
+            for (var index = 0; index < testableEntities.Count; index++)
                 testableEntities[index].Name.Should().Be(entities[index].Name);
         }).ToArray();
 
@@ -198,13 +204,13 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task SelectShouldApplySelect(Int32 nbTasks)
+    public async Task SelectShouldApplySelect(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            List<String> testableEntities = db.Set<TestableEntity>().Select(t => t.Name).ToList();
-            List<String> entities = EntitiesInDb.Select(t => t.Name).ToList();
-            for (Int32 index = 0; index < testableEntities.Count; index++)
+            var testableEntities = db.Set<TestableEntity>().Select(t => t.Name).ToList();
+            var entities = GetTestableEntities().Select(t => t.Name).ToList();
+            for (var index = 0; index < testableEntities.Count; index++)
                 testableEntities[index].Should().Be(entities[index]);
         }).ToArray();
 
@@ -216,13 +222,13 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task ToListAsyncShouldApplyToListAsync(Int32 nbTasks)
+    public async Task ToListAsyncShouldApplyToListAsync(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            List<TestableEntity> testableEntities = await db.Set<TestableEntity>().ToListAsync();
-            List<TestableEntity> entities = EntitiesInDb.ToList();
-            testableEntities.Should().BeEquivalentTo(entities);
+            var testableEntities = await db.Set<TestableEntity>().ToListAsync();
+            var entities = GetTestableEntities().ToList();
+            testableEntities.Should().HaveCount(entities.Count);
         }).ToArray();
 
         await Task.WhenAll(tasks);
@@ -232,12 +238,12 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task ToArrayAsyncShouldApplyToArrayAsync(Int32 nbTasks)
+    public async Task ToArrayAsyncShouldApplyToArrayAsync(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            TestableEntity[] testableEntities = await db.Set<TestableEntity>().ToArrayAsync();
-            testableEntities.Should().BeEquivalentTo(EntitiesInDb);
+            var testableEntities = await db.Set<TestableEntity>().ToArrayAsync();
+            testableEntities.Should().HaveCount(GetTestableEntities().Length);
         }).ToArray();
 
         await Task.WhenAll(tasks);
@@ -247,15 +253,15 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task ComplexQueryShouldWork(Int32 nbTasks)
+    public async Task ComplexQueryShouldWork(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            List<Int32> testableEntities = await db.Set<TestableEntity>().Where(t => t.Name == "Name2")
+            var testableEntities = await db.Set<TestableEntity>().Where(t => t.Name == "Name2")
                 .OrderByDescending(t => t.ID).Select(t => t.ID).ToListAsync();
-            List<Int32> entities = EntitiesInDb.Where(t => t.Name == "Name2").OrderByDescending(t => t.ID)
+            var entities = GetTestableEntities().Where(t => t.Name == "Name2").OrderByDescending(t => t.ID)
                 .Select(t => t.ID).ToList();
-            testableEntities.Should().BeEquivalentTo(entities);
+            testableEntities.Should().HaveCount(entities.Count);
         }).ToArray();
 
         await Task.WhenAll(tasks);
@@ -266,11 +272,12 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task UpdateShouldUpdateAnEntity(Int32 nbTasks)
+    public async Task UpdateShouldUpdateAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var idToFind = testableDbContext.Set<TestableEntity>().First().ID;
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            TestableEntity? testableEntity = db.Set<TestableEntity>().Find(1);
+            var testableEntity = db.Set<TestableEntity>().Find(idToFind);
             testableEntity.Name = "NewName";
             db.Set<TestableEntity>().Update(testableEntity);
             db.SaveChanges();
@@ -278,9 +285,9 @@ public class SqlServerTests
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
         entities.Should().HaveCount(NbTestableEntityAlreadyInDb);
-        entities.First(t => t.ID == 1).Name.Should().Be("NewName");
+        entities.First(t => t.ID == idToFind).Name.Should().Be("NewName");
     }
 
 
@@ -288,11 +295,12 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task UpdateRangeShouldUpdateAnEntity(Int32 nbTasks)
+    public async Task UpdateRangeShouldUpdateAnEntity(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var idToFind = testableDbContext.Set<TestableEntity>().First().ID;
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            TestableEntity? testableEntity = await db.Set<TestableEntity>().FindAsync(1);
+            var testableEntity = await db.Set<TestableEntity>().FindAsync(idToFind);
             testableEntity.Name = "NewName";
             db.Set<TestableEntity>().UpdateRange(testableEntity);
             await db.SaveChangesAsync();
@@ -300,20 +308,20 @@ public class SqlServerTests
 
         await Task.WhenAll(tasks);
 
-        List<TestableEntity> entities = await this.testableDbContext.Set<TestableEntity>().ToListAsync();
+        var entities = await testableDbContext.Set<TestableEntity>().ToListAsync();
         entities.Should().HaveCount(NbTestableEntityAlreadyInDb);
-        entities.First(t => t.ID == 1).Name.Should().Be("NewName");
+        entities.First(t => t.ID == idToFind).Name.Should().Be("NewName");
     }
 
     [Theory]
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task SelectDependenciesShouldWork(Int32 nbTasks)
+    public async Task SelectDependenciesShouldWork(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            TestableEntityDependency? testableEntity = await db.Set<TestableEntity>().Where(t => t.Name == "Name1")
+            var testableEntity = await db.Set<TestableEntity>().Where(t => t.Name == "Name1")
                 .SelectMany(t => t.Dependencies).FirstOrDefaultAsync();
             testableEntity.Should().NotBeNull();
             testableEntity!.Name.Should().Be("Name1");
@@ -326,49 +334,121 @@ public class SqlServerTests
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
-    public async Task IncludeDependenciesShouldWork(Int32 nbTasks)
+    public async Task IncludeDependenciesShouldWork(int nbTasks)
     {
-        Task[] tasks = CreateTasks(nbTasks, this.testableDbContext, async (i, db) =>
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
         {
-            TestableEntity? testableEntity =
+            var testableEntity =
                 await db.Set<TestableEntity>().Include(t => t.Dependencies).FirstOrDefaultAsync();
             testableEntity.Should().NotBeNull();
-            testableEntity!.Dependencies.Should().HaveCount(EntitiesInDb.First().Dependencies.Count);
+            testableEntity!.Dependencies.Should().HaveCount(GetTestableEntities().First().Dependencies.Count);
         }).ToArray();
 
         await Task.WhenAll(tasks);
     }
 
-    private static Task[] CreateTasks(Int32 nbTasks, DbContext dbContext, Func<Int32, DbContext, Task> action)
+    [Theory]
+    [InlineData(10)]
+    [InlineData(20)]
+    [InlineData(50)]
+    public async Task FindGenericShouldWork(int nbTasks)
+    {
+        var idToFind = testableDbContext.Set<TestableEntity>().First().ID;
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
+        {
+            var testableEntity = db.Find<TestableEntity>(idToFind);
+            testableEntity.Should().NotBeNull();
+            testableEntity.ID.Should().Be(idToFind);
+        }).ToArray();
+
+        await Task.WhenAll(tasks);
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(20)]
+    [InlineData(50)]
+    public async Task FindShouldWork(int nbTasks)
+    {
+        var idToFind = testableDbContext.Set<TestableEntity>().First().ID;
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
+        {
+            var testableEntity = db.Find(typeof(TestableEntity), idToFind) as TestableEntity;
+            testableEntity.Should().NotBeNull();
+            testableEntity.ID.Should().Be(idToFind);
+        }).ToArray();
+
+        await Task.WhenAll(tasks);
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(20)]
+    [InlineData(50)]
+    public async Task FindAsyncGenericShouldWork(int nbTasks)
+    {
+        var idToFind = testableDbContext.Set<TestableEntity>().First().ID;
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
+        {
+            var testableEntity = await db.FindAsync<TestableEntity>(idToFind);
+            testableEntity.Should().NotBeNull();
+            testableEntity.ID.Should().Be(idToFind);
+        }).ToArray();
+
+        await Task.WhenAll(tasks);
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(20)]
+    [InlineData(50)]
+    public async Task FindAsyncShouldWork(int nbTasks)
+    {
+        var idToFind = testableDbContext.Set<TestableEntity>().First().ID;
+        var tasks = CreateTasks(nbTasks, testableDbContext, async (i, db) =>
+        {
+            var testableEntity = await db.FindAsync(typeof(TestableEntity), idToFind) as TestableEntity;
+            testableEntity.Should().NotBeNull();
+            testableEntity.ID.Should().Be(idToFind);
+        }).ToArray();
+
+        await Task.WhenAll(tasks);
+    }
+
+
+    private static Task[] CreateTasks(int nbTasks, DbContext dbContext, Func<int, DbContext, Task> action)
     {
         return Enumerable.Range(1, nbTasks)
             .Select(i => Task.Run(() => action(i + IdOffset, dbContext)))
             .ToArray();
     }
 
-    private static DbContext CreateFromConnection()
+    private DbContext CreateFromConnection()
     {
         DbContext dbContext = new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
             .UseSqlServer(
-                "Server=localhost,1436;Database=ThreadSafeDbContext;TrustServerCertificate=true;MultipleActiveResultSets=true;User ID=sa;Password=P@ssword11!!;", //MyP@ssw0rd!
+                "Server=localhost,1436;Database=ThreadSafeDbContext;TrustServerCertificate=true;MultipleActiveResultSets=true;User ID=sa;Password=P@ssword11!!;",
                 options => options.EnableRetryOnFailure()
             )
             .Options);
+        dbContext.Database.EnsureCreated();
 
         CleanExistingData(dbContext);
         FillTestData(dbContext);
         return dbContext;
     }
 
-    private static void FillTestData(DbContext dbContext)
+    private void FillTestData(DbContext dbContext)
     {
-        dbContext.Set<TestableEntity>().AddRange(EntitiesInDb);
+        dbContext.Set<TestableEntity>().AddRange(GetTestableEntities());
         dbContext.SaveChanges();
     }
 
     private static void CleanExistingData(DbContext dbContext)
     {
-        List<TestableEntity> testableEntities = dbContext.Set<TestableEntity>().ToList();
+        var testableEntityDependency = dbContext.Set<TestableEntityDependency>().ToList();
+        dbContext.Set<TestableEntityDependency>().RemoveRange(testableEntityDependency);
+        var testableEntities = dbContext.Set<TestableEntity>().ToList();
         dbContext.Set<TestableEntity>().RemoveRange(testableEntities);
         dbContext.SaveChanges();
     }

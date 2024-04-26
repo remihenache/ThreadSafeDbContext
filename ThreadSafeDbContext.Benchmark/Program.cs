@@ -4,7 +4,7 @@ namespace ThreadSafeDbContext.Benchmark;
 
 internal class Program
 {
-    private static void Main(String[] args)
+    private static void Main(string[] args)
     {
         BenchmarkRunner.Run<DbContextBenchmarker>();
     }

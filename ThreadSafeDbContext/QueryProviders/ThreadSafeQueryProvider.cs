@@ -18,54 +18,54 @@ internal sealed class ThreadSafeQueryProvider : IAsyncQueryProvider
 
     public IQueryable CreateQuery(Expression expression)
     {
-        return new ThreadSafeQueryable(this.queryProvider.CreateQuery(expression), this.semaphoreSlim);
+        return new ThreadSafeQueryable(queryProvider.CreateQuery(expression), semaphoreSlim);
     }
 
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {
-        if (this.queryProvider is IAsyncQueryProvider)
-            return new ThreadSafeAsyncQueryable<TElement>(this.queryProvider.CreateQuery<TElement>(expression),
-                this.semaphoreSlim);
-        return new ThreadSafeQueryable<TElement>(this.queryProvider.CreateQuery<TElement>(expression),
-            this.semaphoreSlim);
+        if (queryProvider is IAsyncQueryProvider)
+            return new ThreadSafeAsyncQueryable<TElement>(queryProvider.CreateQuery<TElement>(expression),
+                semaphoreSlim);
+        return new ThreadSafeQueryable<TElement>(queryProvider.CreateQuery<TElement>(expression),
+            semaphoreSlim);
     }
 
-    public Object? Execute(Expression expression)
+    public object? Execute(Expression expression)
     {
-        this.semaphoreSlim.Wait();
+        semaphoreSlim.Wait();
         try
         {
-            return this.queryProvider.Execute(expression);
+            return queryProvider.Execute(expression);
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
     public TResult Execute<TResult>(Expression expression)
     {
-        this.semaphoreSlim.Wait();
+        semaphoreSlim.Wait();
         try
         {
-            return this.queryProvider.Execute<TResult>(expression);
+            return queryProvider.Execute<TResult>(expression);
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 
     public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = new())
     {
-        this.semaphoreSlim.Wait(cancellationToken);
+        semaphoreSlim.Wait(cancellationToken);
         try
         {
-            return (this.queryProvider as IAsyncQueryProvider)!.ExecuteAsync<TResult>(expression, cancellationToken);
+            return (queryProvider as IAsyncQueryProvider)!.ExecuteAsync<TResult>(expression, cancellationToken);
         }
         finally
         {
-            this.semaphoreSlim.Release();
+            semaphoreSlim.Release();
         }
     }
 }

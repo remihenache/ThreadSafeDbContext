@@ -10,21 +10,21 @@ internal class ThreadSafeQueryable : IOrderedQueryable
 
     public ThreadSafeQueryable(IQueryable set, SemaphoreSlim semaphoreSlim)
     {
-        this.Set = set;
-        this.SemaphoreSlim = semaphoreSlim;
+        Set = set;
+        SemaphoreSlim = semaphoreSlim;
     }
 
 
     public IEnumerator GetEnumerator()
     {
-        return new ThreadSafeEnumerator(this.Set.GetEnumerator(), this.SemaphoreSlim);
+        return new ThreadSafeEnumerator(Set.GetEnumerator(), SemaphoreSlim);
     }
 
-    public Type ElementType => this.Set.ElementType;
+    public Type ElementType => Set.ElementType;
 
-    public Expression Expression => this.Set.Expression;
+    public Expression Expression => Set.Expression;
 
-    public IQueryProvider Provider => new ThreadSafeQueryProvider(this.Set.Provider, this.SemaphoreSlim);
+    public IQueryProvider Provider => new ThreadSafeQueryProvider(Set.Provider, SemaphoreSlim);
 }
 
 internal class ThreadSafeQueryable<T> : ThreadSafeQueryable, IOrderedQueryable<T>
@@ -36,7 +36,7 @@ internal class ThreadSafeQueryable<T> : ThreadSafeQueryable, IOrderedQueryable<T
 
     public new IEnumerator<T> GetEnumerator()
     {
-        return new ThreadSafeEnumerator<T>((this.Set as IQueryable<T>)!.GetEnumerator(), this.SemaphoreSlim);
+        return new ThreadSafeEnumerator<T>((Set as IQueryable<T>)!.GetEnumerator(), SemaphoreSlim);
     }
 }
 
@@ -50,6 +50,6 @@ internal sealed class ThreadSafeAsyncQueryable<T> : ThreadSafeQueryable<T>, IAsy
     public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
         return new ThreadSafeAsyncEnumerator<T>(
-            (this.Set as IAsyncEnumerable<T>)!.GetAsyncEnumerator(cancellationToken), this.SemaphoreSlim);
+            (Set as IAsyncEnumerable<T>)!.GetAsyncEnumerator(cancellationToken), SemaphoreSlim);
     }
 }
