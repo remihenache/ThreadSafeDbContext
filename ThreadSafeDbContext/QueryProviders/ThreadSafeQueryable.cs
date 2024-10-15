@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Linq.Expressions;
+using System.Reflection;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
@@ -25,6 +27,8 @@ internal class ThreadSafeQueryable : IOrderedQueryable
     public Expression Expression => Set.Expression;
 
     public IQueryProvider Provider => new ThreadSafeQueryProvider(Set.Provider, SemaphoreSlim);
+
+
 }
 
 internal class ThreadSafeQueryable<T> : ThreadSafeQueryable, IOrderedQueryable<T>

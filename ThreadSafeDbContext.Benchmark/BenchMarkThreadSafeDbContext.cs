@@ -12,7 +12,7 @@ public class BenchMarkThreadSafeDbContext : Microsoft.EntityFrameworkCore.Thread
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BenchMarkEntity>().ToTable("TestableEntity");
-        modelBuilder.Entity<BenchMarkEntity>().HasKey(t => t.ID);
+        modelBuilder.Entity<BenchMarkEntity>().HasKey(t => t.Id);
         modelBuilder.Entity<BenchMarkEntity>().Property(t => t.Name);
 
 
