@@ -44,6 +44,11 @@ internal class ThreadSafeDbContextWrapper : DbContext
     }
 
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.EnableThreadSafetyChecks(false);
+        base.OnConfiguring(optionsBuilder);
+    }
     public override int SaveChanges()
     {
         return SafeExecute(() => _context.SaveChanges());
