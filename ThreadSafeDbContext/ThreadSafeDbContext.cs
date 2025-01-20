@@ -1,9 +1,28 @@
-﻿namespace Microsoft.EntityFrameworkCore.ThreadSafe;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.ThreadSafe.Internals;
+
+namespace Microsoft.EntityFrameworkCore.ThreadSafe;
 
 public class ThreadSafeDbContext : DbContext
 {
-    private readonly SemaphoreSlim semaphoreSlim = new(1, 1);
+    private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
+    
+    public static DbContext Wrap<T>(DbContext context)
+        where T: DbContext
+    {
+        var existingOptions = context.GetService<IDbContextOptions>() as DbContextOptions<T>;
+        var newOptions = new DbContextOptionsBuilder<T>(existingOptions!)
+            .EnableThreadSafetyChecks(false) 
+            .Options;
+
+        var dbContext = (T)Activator.CreateInstance(typeof(T), newOptions)!;
+        dbContext.Database.CanConnect();
+        return new ThreadSafeDbContextWrapper(dbContext);
+    }
+    
     public ThreadSafeDbContext()
     {
     }
@@ -23,107 +42,113 @@ public class ThreadSafeDbContext : DbContext
 
     public override DbSet<TEntity> Set<TEntity>()
     {
-        semaphoreSlim.Wait();
+        _semaphoreSlim.Wait();
         try
         {
-            return new ThreadSafeDbSet<TEntity>(base.Set<TEntity>(), semaphoreSlim);
+            return new ThreadSafeInternalDbSet<TEntity>(this, typeof(TEntity).FullName!, _semaphoreSlim);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
     public override DbSet<TEntity> Set<TEntity>(string name)
     {
-        semaphoreSlim.Wait();
+        _semaphoreSlim.Wait();
         try
         {
-            return new ThreadSafeDbSet<TEntity>(base.Set<TEntity>(name), semaphoreSlim);
+            return new ThreadSafeInternalDbSet<TEntity>(this, name, _semaphoreSlim);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = new())
     {
-        await semaphoreSlim.WaitAsync(cancellationToken);
+        await _semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        semaphoreSlim.Wait();
+        _semaphoreSlim.Wait();
         try
         {
             return base.SaveChanges(acceptAllChangesOnSuccess);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
 
     public override object? Find(Type entityType, params object?[]? keyValues)
     {
-        semaphoreSlim.Wait();
+        _semaphoreSlim.Wait();
         try
         {
             return base.Find(entityType, keyValues);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
     public override async ValueTask<object?> FindAsync(Type entityType, params object?[]? keyValues)
     {
-        await semaphoreSlim.WaitAsync();
+        await _semaphoreSlim.WaitAsync();
         try
         {
             return await base.FindAsync(entityType, keyValues);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
     public override async ValueTask<object?> FindAsync(Type entityType, object?[]? keyValues,
         CancellationToken cancellationToken)
     {
-        await semaphoreSlim.WaitAsync(cancellationToken);
+        await _semaphoreSlim.WaitAsync(cancellationToken);
         try
         {
             return await base.FindAsync(entityType, keyValues, cancellationToken);
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
     }
 
     public override void Dispose()
     {
-        semaphoreSlim.Dispose();
+        _semaphoreSlim.Dispose();
         base.Dispose();
     }
 
     public override ValueTask DisposeAsync()
     {
-        semaphoreSlim.Dispose();
+        _semaphoreSlim.Dispose();
         return base.DisposeAsync();
+    }
+    
+    public override IQueryable<TResult> FromExpression<TResult>(Expression<Func<IQueryable<TResult>>> expression)
+    {
+        var queryable = base.FromExpression(expression);
+        return new ThreadSafeEntityQueryable<TResult>((queryable.Provider as IAsyncQueryProvider)!, queryable.Expression, _semaphoreSlim);
     }
 }

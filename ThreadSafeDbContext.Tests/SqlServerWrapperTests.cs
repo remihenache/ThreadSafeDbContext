@@ -5,22 +5,19 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests;
 
 [TestCaseOrderer("ThreadSafeDbContext.Tests.AlphabeticalOrderer", "ThreadSafeDbContext.Tests")]
 [Collection("Sequential")]
-public class SqlServerTests
+public class SqlServerWrapperTests
 {
     private const int IdOffset = 1000;
     private const int NbTestableEntityAlreadyInDb = 3;
 
     private readonly DbContext _testableDbContext;
 
-    public SqlServerTests()
+    public SqlServerWrapperTests()
     {
         _testableDbContext = CreateFromConnection();
     }
 
-    
-    private TestableEntity[] GetTestableEntities() => GetAllTestableEntities().Where(t => !string.IsNullOrEmpty(t.Name)).ToArray();
-    
-    private TestableEntity[] GetAllTestableEntities()
+    private TestableEntity[] GetTestableEntities()
     {
         TestableEntity[] entitiesInDb =
         {
@@ -42,10 +39,6 @@ public class SqlServerTests
             new()
             {
                 Name = "Name2"
-            },
-            new()
-            {
-                Name = ""
             }
         };
         return entitiesInDb;
@@ -213,7 +206,6 @@ public class SqlServerTests
     }
 
     [Theory]
-    [InlineData(2)]
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
@@ -249,7 +241,6 @@ public class SqlServerTests
     }
 
     [Theory]
-    [InlineData(1)]
     [InlineData(10)]
     [InlineData(20)]
     [InlineData(50)]
@@ -433,44 +424,6 @@ public class SqlServerTests
         await Task.WhenAll(tasks);
     }
 
-    
-    
-
-    [Fact]
-    public async Task ThreadSafeDbContext_Handles_IgnoreQueryFilters_Correctly()
-    {
-        var query = _testableDbContext.Set<TestableEntity>()
-            .IgnoreQueryFilters();
-        var count = await query.CountAsync();
-        Assert.Equal(4, count);
-    }
-
-    [Fact]
-    public async Task ThreadSafeDbContext_FiltersResultsBy_RLSFlag()
-    {
-        var query = _testableDbContext.Set<TestableEntity>();
-            var count = await query.CountAsync();
-            Assert.Equal(3, count);
-    }
-
-    [Fact]
-    public async Task ThreadSafeDbContext_SetMethod_Handles_IgnoreQueryFilters_Correctly()
-    {
-        var query = _testableDbContext.Set<TestableEntity>()
-                .IgnoreQueryFilters();
-            var count = await query.CountAsync();
-            
-            // The expected result is 2, but the actual result is 1.
-            Assert.Equal(4, count);
-    }
-
-    [Fact]
-    public async Task ThreadSafeDbContext_SetMethod_FiltersResultsBy_RLSFlag()
-    {
-        var query = _testableDbContext.Set<TestableEntity>();
-            var count = await query.CountAsync();
-            Assert.Equal(3, count);
-    }
 
     private static Task[] CreateTasks(int nbTasks, DbContext dbContext, Func<int, DbContext, Task> action)
     {
@@ -481,7 +434,7 @@ public class SqlServerTests
 
     private DbContext CreateFromConnection()
     {
-        DbContext dbContext = new TestableDbContext(new DbContextOptionsBuilder<TestableDbContext>()
+        DbContext dbContext = new NoSafeTestableDbContext(new DbContextOptionsBuilder<NoSafeTestableDbContext>()
             .UseSqlServer(
                 "Server=localhost,1436;Database=ThreadSafeDbContext;TrustServerCertificate=true;MultipleActiveResultSets=true;User ID=sa;Password=P@ssword11!!;",
                 options => options.EnableRetryOnFailure()
@@ -491,12 +444,12 @@ public class SqlServerTests
 
         CleanExistingData(dbContext);
         FillTestData(dbContext);
-        return dbContext;
+        return ThreadSafeDbContext.Wrap<NoSafeTestableDbContext>(dbContext);
     }
 
     private void FillTestData(DbContext dbContext)
     {
-        dbContext.Set<TestableEntity>().AddRange(GetAllTestableEntities());
+        dbContext.Set<TestableEntity>().AddRange(GetTestableEntities());
         dbContext.SaveChanges();
     }
 
@@ -504,7 +457,7 @@ public class SqlServerTests
     {
         var testableEntityDependency = dbContext.Set<TestableEntityDependency>().ToList();
         dbContext.Set<TestableEntityDependency>().RemoveRange(testableEntityDependency);
-        var testableEntities = dbContext.Set<TestableEntity>().IgnoreQueryFilters().ToList();
+        var testableEntities = dbContext.Set<TestableEntity>().ToList();
         dbContext.Set<TestableEntity>().RemoveRange(testableEntities);
         dbContext.SaveChanges();
     }

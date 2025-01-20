@@ -1,15 +1,15 @@
-namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations;
+﻿namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations;
 
-public class TestableDbContext : ThreadSafeDbContext
+public class NoSafeTestableDbContext : DbContext
 {
-    public TestableDbContext(DbContextOptions<TestableDbContext> optionsBuilder) : base(optionsBuilder)
+    public NoSafeTestableDbContext(DbContextOptions<NoSafeTestableDbContext> options)
+    : base(options)
     {
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<TestableEntity>().ToTable("TestableEntity")
-            .HasQueryFilter(e => e.Name != "");
+        modelBuilder.Entity<TestableEntity>().ToTable("TestableEntity");
         modelBuilder.Entity<TestableEntity>().HasKey(t => t.Id);
         modelBuilder.Entity<TestableEntity>().HasMany<TestableEntityDependency>(t => t.Dependencies).WithOne()
             .HasForeignKey(t => t.TestableEntityId);
