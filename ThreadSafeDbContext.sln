@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafeDbContext.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafeDbContext.Benchmark", "ThreadSafeDbContext.Benchmark\ThreadSafeDbContext.Benchmark.csproj", "{E2336547-92F7-419C-A16C-387CEDE23B49}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafeDbContextNet", "ThreadSafeDbContextNet\ThreadSafeDbContextNet.csproj", "{B5847029-050B-472A-8BBB-55E81A01543A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafeDbContextNet.Tests", "ThreadSafeDbContextNet.Tests\ThreadSafeDbContextNet.Tests.csproj", "{953E7552-DC01-4AAB-AB2A-93042F47F3FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{E2336547-92F7-419C-A16C-387CEDE23B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2336547-92F7-419C-A16C-387CEDE23B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2336547-92F7-419C-A16C-387CEDE23B49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5847029-050B-472A-8BBB-55E81A01543A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5847029-050B-472A-8BBB-55E81A01543A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5847029-050B-472A-8BBB-55E81A01543A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5847029-050B-472A-8BBB-55E81A01543A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{953E7552-DC01-4AAB-AB2A-93042F47F3FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{953E7552-DC01-4AAB-AB2A-93042F47F3FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{953E7552-DC01-4AAB-AB2A-93042F47F3FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{953E7552-DC01-4AAB-AB2A-93042F47F3FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
