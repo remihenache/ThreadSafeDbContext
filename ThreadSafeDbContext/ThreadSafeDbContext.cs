@@ -9,20 +9,6 @@ public class ThreadSafeDbContext : DbContext
 {
     private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
-    
-    public static DbContext Wrap<T>(DbContext context)
-        where T: DbContext
-    {
-        var existingOptions = context.GetService<IDbContextOptions>() as DbContextOptions<T>;
-        var newOptions = new DbContextOptionsBuilder<T>(existingOptions!)
-            .EnableThreadSafetyChecks(false) 
-            .Options;
-
-        var dbContext = (T)Activator.CreateInstance(typeof(T), newOptions)!;
-        dbContext.Database.CanConnect();
-        return new ThreadSafeDbContextWrapper(dbContext);
-    }
-    
     public ThreadSafeDbContext()
     {
     }
@@ -32,6 +18,20 @@ public class ThreadSafeDbContext : DbContext
             .EnableThreadSafetyChecks(false)
             .Options)
     {
+    }
+
+
+    public static DbContext Wrap<T>(DbContext context)
+        where T : DbContext
+    {
+        var existingOptions = context.GetService<IDbContextOptions>() as DbContextOptions<T>;
+        var newOptions = new DbContextOptionsBuilder<T>(existingOptions!)
+            .EnableThreadSafetyChecks(false)
+            .Options;
+
+        var dbContext = (T)Activator.CreateInstance(typeof(T), newOptions)!;
+        dbContext.Database.CanConnect();
+        return new ThreadSafeDbContextWrapper(dbContext);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -145,7 +145,7 @@ public class ThreadSafeDbContext : DbContext
         _semaphoreSlim.Dispose();
         return base.DisposeAsync();
     }
-    
+
     public override IQueryable<TResult> FromExpression<TResult>(Expression<Func<IQueryable<TResult>>> expression)
     {
         var queryable = base.FromExpression(expression);

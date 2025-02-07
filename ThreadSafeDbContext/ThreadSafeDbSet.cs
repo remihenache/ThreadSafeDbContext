@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Linq.Expressions;
-using System.Reflection;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.ThreadSafe.QueryProviders;
 
 namespace Microsoft.EntityFrameworkCore.ThreadSafe;
@@ -28,6 +26,17 @@ internal sealed class ThreadSafeDbSet<TEntity> :
     public override IEntityType EntityType => _set.EntityType;
 
     public override LocalView<TEntity> Local => SafeExecute(() => _set.Local);
+
+    public void ResetState()
+    {
+        (_set as IResettableService)?.ResetState();
+    }
+
+    public async Task ResetStateAsync(CancellationToken cancellationToken = new())
+    {
+        if (_set is IResettableService resettableService)
+            await resettableService.ResetStateAsync(cancellationToken);
+    }
 
     public override EntityEntry<TEntity> Add(TEntity entity)
     {
@@ -207,22 +216,11 @@ internal sealed class ThreadSafeDbSet<TEntity> :
 
     public IQueryProvider Provider =>
         new ThreadSafeAsyncQueryable<TEntity>(_set.AsQueryable(), _semaphoreSlim).Provider;
-    
+
     public IEnumerator<TEntity> GetEnumerator()
     {
         return new ThreadSafeAsyncQueryable<TEntity>(_set.AsQueryable(), _semaphoreSlim).GetEnumerator();
     }
 
     #endregion
-    
-    public void ResetState()
-    {
-        (_set as IResettableService)?.ResetState();
-    }
-
-    public async Task ResetStateAsync(CancellationToken cancellationToken = new())
-    {
-       if(_set is IResettableService resettableService)
-         await resettableService.ResetStateAsync(cancellationToken);
-    }
 }

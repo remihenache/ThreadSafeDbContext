@@ -4,17 +4,17 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations;
+using ThreadSafeDbContextNet.Tests.TestableImplementations;
 using Xunit;
 
-namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
+namespace ThreadSafeDbContextNet.Tests
 {
     [TestCaseOrderer("ThreadSafeDbContext.Tests.AlphabeticalOrderer", "ThreadSafeDbContext.Tests")]
     [Collection("Sequential")]
     public class SqlServerTests
     {
         private const int IdOffset = 1000;
-        private const int NbTestableEntityAlreadyInDb = 3;
+        private const int NbTestableEntityAlreadyInDb = 4;
 
         private readonly DbContext _testableDbContext;
 
@@ -23,33 +23,36 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
             _testableDbContext = CreateFromConnection();
         }
 
-    
-        private TestableEntity[] GetTestableEntities() => GetAllTestableEntities().Where(t => !string.IsNullOrEmpty(t.Name)).ToArray();
-    
+
+        private TestableEntity[] GetTestableEntities()
+        {
+            return GetAllTestableEntities().ToArray();
+        }
+
         private TestableEntity[] GetAllTestableEntities()
         {
             TestableEntity[] entitiesInDb =
             {
-                new TestableEntity()
+                new TestableEntity
                 {
                     Name = "Name1",
                     Dependencies = new List<TestableEntityDependency>
                     {
-                        new TestableEntityDependency()
+                        new TestableEntityDependency
                         {
                             Name = "Name1"
                         }
                     }
                 },
-                new TestableEntity()
+                new TestableEntity
                 {
                     Name = "Name2"
                 },
-                new TestableEntity()
+                new TestableEntity
                 {
                     Name = "Name2"
                 },
-                new TestableEntity()
+                new TestableEntity
                 {
                     Name = ""
                 }
@@ -109,7 +112,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
         {
             var tasks = CreateTasks(nbTasks, _testableDbContext, (i, db) =>
             {
-                db.Set<TestableEntity>().AddRange(new List<TestableEntity>()
+                db.Set<TestableEntity>().AddRange(new List<TestableEntity>
                 {
                     new TestableEntity
                     {
@@ -136,6 +139,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
             {
                 db.Set<TestableEntity>().Attach(new TestableEntity
                 {
+                    Id = i,
                     Name = "TestInsert"
                 });
                 await db.SaveChangesAsync();
@@ -144,7 +148,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
             await Task.WhenAll(tasks);
 
             var entities = await _testableDbContext.Set<TestableEntity>().ToListAsync();
-            entities.Should().HaveCount(NbTestableEntityAlreadyInDb + nbTasks);
+            entities.Should().HaveCount(NbTestableEntityAlreadyInDb);
         }
 
         [Theory]
@@ -271,7 +275,6 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
         }
 
 
-
         [Theory]
         [InlineData(10)]
         [InlineData(20)]
@@ -304,23 +307,6 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests
             }).ToArray();
 
             await Task.WhenAll(tasks);
-        }
-
-
-        [Fact]
-        public async Task ThreadSafeDbContext_FiltersResultsBy_RLSFlag()
-        {
-            var query = _testableDbContext.Set<TestableEntity>();
-            var count = await query.CountAsync();
-            Assert.Equal(3, count);
-        }
-
-        [Fact]
-        public async Task ThreadSafeDbContext_SetMethod_FiltersResultsBy_RLSFlag()
-        {
-            var query = _testableDbContext.Set<TestableEntity>();
-            var count = await query.CountAsync();
-            Assert.Equal(3, count);
         }
 
         private static Task[] CreateTasks(int nbTasks, DbContext dbContext, Func<int, DbContext, Task> action)

@@ -1,29 +1,68 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.EntityFrameworkNet.ThreadSafe.QueryProviders;
+namespace ThreadSafeDbContextNet.QueryProviders;
 
 internal class ThreadSafeEnumerator : IEnumerator, IDbAsyncEnumerator
 {
-    protected readonly IEnumerator Enumerator;
+    protected readonly IDbAsyncEnumerator? DbEnumerator;
+    protected readonly IEnumerator? Enumerator;
     protected readonly SemaphoreSlim SemaphoreSlim;
+    protected readonly ThrowingMonitorProxy ThrowingMonitor;
 
-    public ThreadSafeEnumerator(IEnumerator enumerator, SemaphoreSlim semaphoreSlim)
+    public ThreadSafeEnumerator(IEnumerator enumerator, SemaphoreSlim semaphoreSlim, ThrowingMonitorProxy throwingMonitor)
     {
         Enumerator = enumerator;
         SemaphoreSlim = semaphoreSlim;
+        ThrowingMonitor = throwingMonitor;
+    }
+
+    public ThreadSafeEnumerator(IDbAsyncEnumerator enumerator, SemaphoreSlim semaphoreSlim, ThrowingMonitorProxy throwingMonitor)
+    {
+        DbEnumerator = enumerator;
+        SemaphoreSlim = semaphoreSlim;
+        ThrowingMonitor = throwingMonitor;
+    }
+
+    public async Task<bool> MoveNextAsync(CancellationToken cancellationToken)
+    {
+        await SemaphoreSlim.WaitAsync(cancellationToken);
+        ThrowingMonitor.Erase();
+        try
+        {
+            return Enumerator?.MoveNext() ?? await DbEnumerator!.MoveNextAsync(cancellationToken);
+        }
+        finally
+        {
+            SemaphoreSlim.Release();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (DbEnumerator is null) return;
+        SemaphoreSlim.Wait();
+        ThrowingMonitor.Erase();
+        try
+        {
+            DbEnumerator.Dispose();
+        }
+        finally
+        {
+            SemaphoreSlim.Release();
+        }
     }
 
     public bool MoveNext()
     {
         SemaphoreSlim.Wait();
+        ThrowingMonitor.Erase();
         try
         {
-            return Enumerator.MoveNext();
+            return Enumerator?.MoveNext() ?? DbEnumerator!.MoveNextAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
         finally
         {
@@ -34,9 +73,10 @@ internal class ThreadSafeEnumerator : IEnumerator, IDbAsyncEnumerator
     public void Reset()
     {
         SemaphoreSlim.Wait();
+        ThrowingMonitor.Erase();
         try
         {
-            Enumerator.Reset();
+            Enumerator?.Reset();
         }
         finally
         {
@@ -44,63 +84,28 @@ internal class ThreadSafeEnumerator : IEnumerator, IDbAsyncEnumerator
         }
     }
 
-    public async Task<bool> MoveNextAsync(CancellationToken cancellationToken)
-    {
-        await SemaphoreSlim.WaitAsync(cancellationToken);
-        try
-        {
-            return Enumerator.MoveNext();
-        }
-        finally
-        {
-            SemaphoreSlim.Release();
-        }
-    }
-
-    public object Current => Enumerator.Current!;
-    public void Dispose()
-    {
-        if (Enumerator is not IDisposable disposable) return;
-        SemaphoreSlim.Wait();
-        try
-        {
-            disposable.Dispose();
-        }
-        finally
-        {
-            SemaphoreSlim.Release();
-        }
-    }
+    public object Current => Enumerator?.Current ?? DbEnumerator!.Current;
 }
 
 internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerator<T>, IDbAsyncEnumerator<T>
 {
-    public ThreadSafeEnumerator(IEnumerator<T> enumerator, SemaphoreSlim semaphoreSlim)
-        : base(enumerator, semaphoreSlim)
+    public ThreadSafeEnumerator(IEnumerator<T> enumerator, SemaphoreSlim semaphoreSlim, ThrowingMonitorProxy throwingMonitor)
+        : base(enumerator, semaphoreSlim, throwingMonitor)
     {
     }
 
-
-    public void Dispose()
+    public ThreadSafeEnumerator(IDbAsyncEnumerator<T> enumerator, SemaphoreSlim semaphoreSlim, ThrowingMonitorProxy throwingMonitor)
+        : base(enumerator, semaphoreSlim, throwingMonitor)
     {
-        if (Enumerator is not IDisposable disposable) return;
-        SemaphoreSlim.Wait();
-        try
-        {
-            disposable.Dispose();
-        }
-        finally
-        {
-            SemaphoreSlim.Release();
-        }
     }
 
     public async Task<bool> MoveNextAsync(CancellationToken cancellationToken)
     {
         await SemaphoreSlim.WaitAsync(cancellationToken);
+        ThrowingMonitor.Erase();
         try
         {
-            return await ((IDbAsyncEnumerator<T>) Enumerator).MoveNextAsync(cancellationToken);
+            return Enumerator?.MoveNext() ?? await DbEnumerator!.MoveNextAsync(cancellationToken);
         }
         finally
         {
@@ -108,6 +113,23 @@ internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerato
         }
     }
 
-    public new T Current => ((T) Enumerator.Current)!;
-    T IEnumerator<T>.Current => ((T) Enumerator.Current)!;
+    public new T Current => ((T)Enumerator?.Current ?? (T)DbEnumerator!.Current)!;
+
+
+    public void Dispose()
+    {
+        if (DbEnumerator is null) return;
+        SemaphoreSlim.Wait();
+        ThrowingMonitor.Erase();
+        try
+        {
+            DbEnumerator.Dispose();
+        }
+        finally
+        {
+            SemaphoreSlim.Release();
+        }
+    }
+
+    T IEnumerator<T>.Current => ((T)Enumerator?.Current ?? (T)DbEnumerator!.Current)!;
 }

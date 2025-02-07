@@ -13,31 +13,20 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Internals;
 internal class ThreadSafeEntityQueryable<T> : EntityQueryable<T>, IAsyncEnumerable<T>, IOrderedQueryable, IListSource
 {
     private readonly SemaphoreSlim _semaphoreSlim;
+
     public ThreadSafeEntityQueryable(IAsyncQueryProvider queryProvider, IEntityType entityType, SemaphoreSlim semaphoreSlim)
-    :base(queryProvider, entityType)
+        : base(queryProvider, entityType)
     {
         _semaphoreSlim = semaphoreSlim;
     }
+
     public ThreadSafeEntityQueryable(IAsyncQueryProvider queryProvider, Expression expression, SemaphoreSlim semaphoreSlim)
         : base(queryProvider, expression)
     {
         _semaphoreSlim = semaphoreSlim;
     }
 
-    public override IEnumerator<T> GetEnumerator()
-    {
-        return new ThreadSafeEnumerator<T>(base.GetEnumerator(), _semaphoreSlim);
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return new ThreadSafeEnumerator<T>(base.GetEnumerator(), _semaphoreSlim);
-    }
-
-
-    public override IQueryProvider Provider => new ThreadSafeEntityQueryProvider(base.Provider, _semaphoreSlim);
-
-    public override IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default(CancellationToken))
+    public override IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
         return new ThreadSafeAsyncEnumerator<T>(base.GetAsyncEnumerator(cancellationToken), _semaphoreSlim);
     }
@@ -48,5 +37,17 @@ internal class ThreadSafeEntityQueryable<T> : EntityQueryable<T>, IAsyncEnumerab
     {
         return new List<T>(new ThreadSafeQueryable(this, _semaphoreSlim).OfType<T>());
     }
-    
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return new ThreadSafeEnumerator<T>(base.GetEnumerator(), _semaphoreSlim);
+    }
+
+
+    public override IQueryProvider Provider => new ThreadSafeEntityQueryProvider(base.Provider, _semaphoreSlim);
+
+    public override IEnumerator<T> GetEnumerator()
+    {
+        return new ThreadSafeEnumerator<T>(base.GetEnumerator(), _semaphoreSlim);
+    }
 }

@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Microsoft.EntityFrameworkCore.ThreadSafe.Internals;
 
-
 [SuppressMessage("Usage", "EF1001:Internal EF Core API usage.")]
 internal sealed class ThreadSafeInternalDbSet<TEntity> :
     InternalDbSet<TEntity>,
@@ -17,9 +16,9 @@ internal sealed class ThreadSafeInternalDbSet<TEntity> :
     where TEntity : class
 {
     private readonly SemaphoreSlim _semaphoreSlim;
-    
+
     public ThreadSafeInternalDbSet(DbContext context, string entityName, SemaphoreSlim semaphoreSlim)
-        :base(context, entityName)
+        : base(context, entityName)
     {
         _semaphoreSlim = semaphoreSlim;
     }
@@ -185,13 +184,14 @@ internal sealed class ThreadSafeInternalDbSet<TEntity> :
     }
 
     private IQueryProvider? _queryProvider;
+
     public IQueryProvider Provider
     {
         get
         {
             if (_queryProvider != null)
                 return _queryProvider;
-            
+
             var field = typeof(InternalDbSet<TEntity>).GetProperty("EntityQueryable", BindingFlags.NonPublic | BindingFlags.Instance)!;
             var entityQueryable = (field.GetValue(this) as EntityQueryable<TEntity>)!;
             _queryProvider = new ThreadSafeEntityQueryProvider(entityQueryable.Provider, _semaphoreSlim);
@@ -221,5 +221,4 @@ internal sealed class ThreadSafeInternalDbSet<TEntity> :
     }
 
     #endregion
-    
 }

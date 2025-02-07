@@ -1,15 +1,14 @@
 ﻿using System.Data.Entity;
 
-namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations
+namespace ThreadSafeDbContextNet.Tests.TestableImplementations
 {
     public class NoSafeTestableDbContext : DbContext
     {
-
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TestableEntity>().ToTable("TestableEntity");
             modelBuilder.Entity<TestableEntity>().HasKey(t => t.Id);
-            modelBuilder.Entity<TestableEntity>().HasMany<TestableEntityDependency>(t => t.Dependencies).WithRequired()
+            modelBuilder.Entity<TestableEntity>().HasMany(t => t.Dependencies).WithRequired()
                 .HasForeignKey(t => t.TestableEntityId);
             modelBuilder.Entity<TestableEntity>().Property(t => t.Name);
 

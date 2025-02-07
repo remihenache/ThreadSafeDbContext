@@ -11,12 +11,17 @@ internal class ThreadSafeDbContextWrapper : DbContext
 {
     private readonly DbContext _context;
     private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
-    
+
     internal ThreadSafeDbContextWrapper(DbContext context)
     {
         _context = context;
     }
-    
+
+    public override DatabaseFacade Database => _context.Database;
+    public override ChangeTracker ChangeTracker => _context.ChangeTracker;
+    public override IModel Model => _context.Model;
+    public override DbContextId ContextId => _context.ContextId;
+
     public override DbSet<TEntity> Set<TEntity>()
     {
         _semaphoreSlim.Wait();
@@ -49,6 +54,7 @@ internal class ThreadSafeDbContextWrapper : DbContext
         optionsBuilder.EnableThreadSafetyChecks(false);
         base.OnConfiguring(optionsBuilder);
     }
+
     public override int SaveChanges()
     {
         return SafeExecute(() => _context.SaveChanges());
@@ -176,11 +182,6 @@ internal class ThreadSafeDbContextWrapper : DbContext
         return _context.GetHashCode();
     }
 
-    public override DatabaseFacade Database => _context.Database;
-    public override ChangeTracker ChangeTracker => _context.ChangeTracker;
-    public override IModel Model => _context.Model;
-    public override DbContextId ContextId => _context.ContextId;
-
     public override void Dispose()
     {
         _semaphoreSlim.Dispose();
@@ -297,8 +298,8 @@ internal class ThreadSafeDbContextWrapper : DbContext
     {
         SafeExecute(() => _context.UpdateRange(entities));
     }
-    
-    
+
+
     private async Task SafeExecuteAsync(Func<Task> func, CancellationToken cancellationToken = default)
     {
         await _semaphoreSlim.WaitAsync(cancellationToken);
@@ -311,7 +312,7 @@ internal class ThreadSafeDbContextWrapper : DbContext
             _semaphoreSlim.Release();
         }
     }
-    
+
     private async ValueTask<T> SafeExecuteAsync<T>(Func<ValueTask<T>> func, CancellationToken cancellationToken = default)
     {
         await _semaphoreSlim.WaitAsync(cancellationToken);
@@ -324,6 +325,7 @@ internal class ThreadSafeDbContextWrapper : DbContext
             _semaphoreSlim.Release();
         }
     }
+
     private void SafeExecute(Action func, CancellationToken cancellationToken = default)
     {
         _semaphoreSlim.Wait(cancellationToken);
@@ -336,7 +338,7 @@ internal class ThreadSafeDbContextWrapper : DbContext
             _semaphoreSlim.Release();
         }
     }
-    
+
     private T SafeExecute<T>(Func<T> func, CancellationToken cancellationToken = default)
     {
         _semaphoreSlim.Wait(cancellationToken);

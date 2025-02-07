@@ -9,6 +9,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Internals;
 [SuppressMessage("Usage", "EF1001:Internal EF Core API usage.")]
 internal sealed class ThreadSafeEntityQueryProvider : EntityQueryProvider
 {
+    private static MethodInfo? _genericCreateQueryMethod;
     private readonly SemaphoreSlim _semaphoreSlim;
 
     public ThreadSafeEntityQueryProvider(
@@ -19,6 +20,10 @@ internal sealed class ThreadSafeEntityQueryProvider : EntityQueryProvider
         _semaphoreSlim = semaphoreSlim;
     }
 
+    private static MethodInfo GenericCreateQueryMethod
+        => _genericCreateQueryMethod ??= typeof(ThreadSafeEntityQueryProvider)
+            .GetMethod("CreateQuery", 1, BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(Expression) }, null)!;
+
 
     private static IQueryCompiler GetQueryCompiler(IQueryProvider queryProvider)
     {
@@ -26,10 +31,6 @@ internal sealed class ThreadSafeEntityQueryProvider : EntityQueryProvider
         return (IQueryCompiler)field!.GetValue(queryProvider)!;
     }
 
-    private static MethodInfo? _genericCreateQueryMethod;
-    private static MethodInfo GenericCreateQueryMethod
-        => _genericCreateQueryMethod ??= typeof(ThreadSafeEntityQueryProvider)
-            .GetMethod("CreateQuery", 1, BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(Expression) }, null)!;
     public override IQueryable CreateQuery(Expression expression)
     {
         return (IQueryable)GenericCreateQueryMethod

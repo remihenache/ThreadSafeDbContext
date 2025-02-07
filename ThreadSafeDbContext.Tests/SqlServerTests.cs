@@ -17,9 +17,12 @@ public class SqlServerTests
         _testableDbContext = CreateFromConnection();
     }
 
-    
-    private TestableEntity[] GetTestableEntities() => GetAllTestableEntities().Where(t => !string.IsNullOrEmpty(t.Name)).ToArray();
-    
+
+    private TestableEntity[] GetTestableEntities()
+    {
+        return GetAllTestableEntities().Where(t => !string.IsNullOrEmpty(t.Name)).ToArray();
+    }
+
     private TestableEntity[] GetAllTestableEntities()
     {
         TestableEntity[] entitiesInDb =
@@ -433,8 +436,6 @@ public class SqlServerTests
         await Task.WhenAll(tasks);
     }
 
-    
-    
 
     [Fact]
     public async Task ThreadSafeDbContext_Handles_IgnoreQueryFilters_Correctly()
@@ -449,27 +450,27 @@ public class SqlServerTests
     public async Task ThreadSafeDbContext_FiltersResultsBy_RLSFlag()
     {
         var query = _testableDbContext.Set<TestableEntity>();
-            var count = await query.CountAsync();
-            Assert.Equal(3, count);
+        var count = await query.CountAsync();
+        Assert.Equal(3, count);
     }
 
     [Fact]
     public async Task ThreadSafeDbContext_SetMethod_Handles_IgnoreQueryFilters_Correctly()
     {
         var query = _testableDbContext.Set<TestableEntity>()
-                .IgnoreQueryFilters();
-            var count = await query.CountAsync();
-            
-            // The expected result is 2, but the actual result is 1.
-            Assert.Equal(4, count);
+            .IgnoreQueryFilters();
+        var count = await query.CountAsync();
+
+        // The expected result is 2, but the actual result is 1.
+        Assert.Equal(4, count);
     }
 
     [Fact]
     public async Task ThreadSafeDbContext_SetMethod_FiltersResultsBy_RLSFlag()
     {
         var query = _testableDbContext.Set<TestableEntity>();
-            var count = await query.CountAsync();
-            Assert.Equal(3, count);
+        var count = await query.CountAsync();
+        Assert.Equal(3, count);
     }
 
     private static Task[] CreateTasks(int nbTasks, DbContext dbContext, Func<int, DbContext, Task> action)

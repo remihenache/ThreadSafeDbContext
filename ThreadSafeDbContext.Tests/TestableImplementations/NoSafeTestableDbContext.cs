@@ -3,7 +3,7 @@
 public class NoSafeTestableDbContext : DbContext
 {
     public NoSafeTestableDbContext(DbContextOptions<NoSafeTestableDbContext> options)
-    : base(options)
+        : base(options)
     {
     }
 

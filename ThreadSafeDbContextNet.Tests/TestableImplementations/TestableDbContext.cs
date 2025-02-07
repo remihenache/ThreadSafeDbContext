@@ -1,11 +1,10 @@
 using System.Data.Entity;
-using Microsoft.EntityFrameworkNet.ThreadSafe;
 
-namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations
+namespace ThreadSafeDbContextNet.Tests.TestableImplementations
 {
     public class TestableDbContext : ThreadSafeDbContext
     {
-        public TestableDbContext(string connectionString): base(connectionString)
+        public TestableDbContext(string connectionString) : base(connectionString)
         {
             Configuration.LazyLoadingEnabled = false;
         }
@@ -14,7 +13,7 @@ namespace Microsoft.EntityFrameworkCore.ThreadSafe.Tests.TestableImplementations
         {
             modelBuilder.Entity<TestableEntity>().ToTable("TestableEntity");
             modelBuilder.Entity<TestableEntity>().HasKey(t => t.Id);
-            modelBuilder.Entity<TestableEntity>().HasMany<TestableEntityDependency>(t => t.Dependencies).WithRequired(d => d.TestableEntity)
+            modelBuilder.Entity<TestableEntity>().HasMany(t => t.Dependencies).WithRequired(d => d.TestableEntity)
                 .HasForeignKey(t => t.TestableEntityId);
             modelBuilder.Entity<TestableEntity>().Property(t => t.Name);
 

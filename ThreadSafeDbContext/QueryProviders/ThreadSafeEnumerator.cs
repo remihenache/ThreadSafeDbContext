@@ -64,5 +64,5 @@ internal sealed class ThreadSafeEnumerator<T> : ThreadSafeEnumerator, IEnumerato
         }
     }
 
-    T IEnumerator<T>.Current => ((T) Enumerator.Current)!;
+    T IEnumerator<T>.Current => ((T)Enumerator.Current)!;
 }
